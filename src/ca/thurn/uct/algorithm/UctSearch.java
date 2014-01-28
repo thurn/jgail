@@ -79,7 +79,6 @@ public class UctSearch<A extends Action, S extends State<A,S>> implements Action
   A uctSelectAction(S state) {
     // We iterate through each action and return the one that maximizes
     // uctValue.
-    // TODO: handle division by zero as well as breaking ties randomly
     double maximum = 0.0;
     A result = null;
     for (A action : state.getActions()) {
