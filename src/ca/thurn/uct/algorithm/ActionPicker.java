@@ -1,8 +1,9 @@
 package ca.thurn.uct.algorithm;
 
-public interface ActionPicker<A extends Action, S extends State<A, S>> {
+public interface ActionPicker<A extends Action> {
   /**
-   * Picks an action to take from the provided root node. 
+   * Picks an action for the provided player to take from the provided root
+   * node. 
    */
-  public A pickAction(S rootNode);
+  public A pickAction(Player player, State<A> rootNode);
 }

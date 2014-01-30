@@ -1,13 +1,9 @@
 package ca.thurn.uct.connect4;
 
 import ca.thurn.uct.algorithm.Action;
+import ca.thurn.uct.algorithm.Player;
 
 public class Connect4Action implements Action {
-	public static enum Player {
-		RED,
-		BLACK
-	}
-	
 	/**
 	 * The column in which you will drop your piece.
 	 */
@@ -33,5 +29,10 @@ public class Connect4Action implements Action {
   
   public String toString() {
     return "[" + columnNumber + "]";
+  }
+
+  @Override
+  public int getActionNumber() {
+    return columnNumber;
   }
 }

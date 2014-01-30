@@ -4,26 +4,31 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import ca.thurn.uct.algorithm.Player;
 import ca.thurn.uct.algorithm.State;
-import ca.thurn.uct.connect4.Connect4Action.Player;
 
-public class Connect4State extends State<Connect4Action, Connect4State> {
+/**
+ * This is a simple implementation of Connect4State that does not attempt
+ * any optimization. It's largely immutable.
+ */
+public class Connect4State extends State<Connect4Action> {
 
   private static List<Connect4Action> redActions;
   private static List<Connect4Action> blackActions;
+
   static {
     redActions = new ArrayList<Connect4Action>();
     for (int i = 0; i < 7; ++i) {
-      redActions.add(new Connect4Action(Player.RED, i));			
+      redActions.add(new Connect4Action(Connect4Player.RED, i));            
     }
 
     blackActions = new ArrayList<Connect4Action>();
     for (int i = 0; i < 7; ++i) {
-      blackActions.add(new Connect4Action(Player.BLACK, i));
+      blackActions.add(new Connect4Action(Connect4Player.BLACK, i));
     }
   }
   
-  private static enum Direction {
+  static enum Direction {
     N,
     NE,
     E,
@@ -35,31 +40,37 @@ public class Connect4State extends State<Connect4Action, Connect4State> {
   }
 
   // Indexed as board[column][row] with the origin being in the bottom left.
-  private final Player[][] board;
+  Connect4Player[][] board;
+  
+  Connect4Player[][] originalBoard;
   
   // The player whose turn it is
-  private final Player player;
+  final Connect4Player currentPlayer;
   
   // The player who has won the game at this state, or null if the game is
   // still ongoing.
-  private final Player winner;
+  final Connect4Player winner;
 
   public Connect4State() {
     super(blackActions);
-    this.board = new Player[7][6];
-    this.player = Player.BLACK;
+    this.board = new Connect4Player[7][6];
+    this.currentPlayer = Connect4Player.BLACK; // BLACK moves first
     this.winner = null;
   }
   
-  private Connect4State(Player player, Player[][] board, Player winner) {
-    super(actionsForPlayer(board, player));
+  Connect4State(Connect4Player currentPlayer, Connect4Player[][] board, Connect4Player winner) {
+    super(actionsForPlayer(board, currentPlayer));
     this.board = board;
-    this.player = player;
+    this.currentPlayer = currentPlayer;
     this.winner = winner;
   }
+  
+  public Connect4State(Connect4State state) {
+    this(state.currentPlayer, copyBoard(state.board), state.winner);    
+  }
 
-  private static List<Connect4Action> actionsForPlayer(Player[][] board, Player player) {
-    List<Connect4Action> actions = player == Player.RED ? redActions : blackActions;
+  static List<Connect4Action> actionsForPlayer(Connect4Player[][] board, Connect4Player player) {
+    List<Connect4Action> actions = player == Connect4Player.RED ? redActions : blackActions;
     List<Connect4Action> result = new ArrayList<Connect4Action>();
     for (Connect4Action action : actions) {
       if (board[action.getColumnNumber()][5] == null) {
@@ -70,23 +81,25 @@ public class Connect4State extends State<Connect4Action, Connect4State> {
   }
 
   @Override
-  public double evaluate() {
+  public double evaluate(Player player) {
     return 0.0;
   }
 
   @Override
-  public ActionResult perform(Connect4Action action) {
-    Player[][] newBoard = copyBoard();
+  public ActionResult<Connect4Action> perform(Player player, Connect4Action action) {
     int freeCell = 0;
-    while (newBoard[action.getColumnNumber()][freeCell] != null) {
+    while (board[action.getColumnNumber()][freeCell] != null) {
       freeCell++;
     }
-    newBoard[action.getColumnNumber()][freeCell] = player;
-    Player nextStateWinner = computeWinner(player, action.getColumnNumber(), freeCell);
-    Connect4State nextState = new Connect4State(player == Player.RED ? Player.BLACK : Player.RED,
-        newBoard, nextStateWinner);
-    double reward = (nextStateWinner == Player.RED) ? 1.0 : 0.0;
-    return new ActionResult(nextState, reward);
+    Connect4Player nextStateWinner = computeWinner(currentPlayer, action.getColumnNumber(), freeCell);
+    board[action.getColumnNumber()][freeCell] = currentPlayer;    
+    Connect4State nextState = new Connect4State(
+        currentPlayer == Connect4Player.RED ? Connect4Player.BLACK : Connect4Player.RED,
+        board,
+        nextStateWinner);
+    double reward = (nextStateWinner == player) ? 1.0 : 0.0;
+    board = null;
+    return new ActionResult<Connect4Action>(nextState, reward);
   }
 
   @Override
@@ -95,40 +108,54 @@ public class Connect4State extends State<Connect4Action, Connect4State> {
     return winner != null;
   }
   
-  public void printState() {
-    for (int row = 5; row >= 0; --row) {
-      for (int column = 0; column < 7; ++column) {
-        Player p = board[column][row];
-        if (p == null) {
-          System.out.print("-");
-        } else {
-          System.out.print(p == Player.RED ? "X" : "O");
-        }
-      }
-      System.out.print("\n");
-    }
+  @Override
+  public void reset() {
+    this.board = copyBoard(this.originalBoard);
   }
   
-  private Player[][] copyBoard() {
-    Player[][] result = new Player[7][6];
+  @Override
+  public void prepareForSimulation() {
+    this.originalBoard = copyBoard(board);
+  }
+  
+  protected static Connect4Player[][] copyBoard(Connect4Player[][] board) {
+    Connect4Player[][] result = new Connect4Player[7][6];
     for (int i = 0; i < 7; ++i) {
       result[i] = Arrays.copyOf(board[i], 7);
     }
     return result;
-  }
+  }  
   
-  public Player getWinner() {
+  @Override  
+  public String toString() {
+    StringBuilder result = new StringBuilder();
+    for (int row = 5; row >= 0; --row) {
+      for (int column = 0; column < 7; ++column) {
+        Connect4Player p = board[column][row];
+        if (p == null) {
+          result.append("-");
+        } else {
+          result.append(p == Connect4Player.RED ? "X" : "O");
+        }
+      }
+      result.append("\n");
+    }
+    return result.toString();
+  }
+
+  @Override  
+  public Connect4Player getWinner() {
     return winner;
   }
   
   public Player getCurrentPlayer() {
-    return player;
+    return currentPlayer;
   }
   
   /**
    * Checks whether the provided player has won by making the provided move.
    */
-  private Player computeWinner(Player player, int moveColumn, int moveRow) {
+  Connect4Player computeWinner(Connect4Player player, int moveColumn, int moveRow) {
     // Vertical win?
     if (countGroupSize(moveColumn, moveRow - 1, Direction.S, player) >= 3) {
       return player;
@@ -153,9 +180,8 @@ public class Connect4State extends State<Connect4Action, Connect4State> {
     // No win
     return null;
   }
-
-  private int countGroupSize(int col, int row, Direction dir,
-      Player player) {
+  
+  int countGroupSize(int col, int row, Direction dir, Player player) {
     if (row < 6 && row >= 0 && col < 7 && col >= 0
         && board[col][row] == player) {
       switch (dir) {
@@ -181,6 +207,11 @@ public class Connect4State extends State<Connect4Action, Connect4State> {
     } else {
       return 0;
     }
+  }
+
+  @Override
+  public int numActions() {
+    return 7;
   }
 
 }

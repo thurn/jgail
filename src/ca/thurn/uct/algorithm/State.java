@@ -1,26 +1,24 @@
 package ca.thurn.uct.algorithm;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
-public abstract class State<A extends Action, S extends State<A, S>> {
+public abstract class State<A extends Action> {
 
   protected List<A> actions;
   protected int stateVisits;
-  protected Map<A, Integer> actionVisits;
-  protected Map<A, Double> actionRewards;
+  protected int[] actionVisits;
+  protected double[] actionRewards;
 
-  public class ActionResult {
-    private final S nextState;
+  public static class ActionResult<A extends Action> {
+    private final State<A> nextState;
     private final double reward;
 
-    public ActionResult(S nextState, double reward) {
+    public ActionResult(State<A> nextState, double reward) {
       this.nextState = nextState;
       this.reward = reward;
     }
 
-    public S getNextState() {
+    public State<A> getNextState() {
       return nextState;
     }
 
@@ -32,9 +30,16 @@ public abstract class State<A extends Action, S extends State<A, S>> {
   public State(List<A> actions) {
     this.actions = actions;
     this.stateVisits = 0;
-    this.actionVisits = new HashMap<A, Integer>();
-    this.actionRewards = new HashMap<A, Double>();
+    this.actionVisits = new int[numActions()];
+    this.actionRewards = new double[numActions()];
   }
+  
+  /**
+   * Returns the number of possible actions from this state (more precisely,
+   * this should be the highest  possible return value for an action's
+   * getActionNumber() method).
+   */
+  public abstract int numActions();
 
   /**
    * Returns actions available from this state.
@@ -49,10 +54,10 @@ public abstract class State<A extends Action, S extends State<A, S>> {
    * Q in the original UCT paper.
    */
   public double averagePayoff(A action) {
-    addZerosForAction(action);
     // Estimate payoff of an action based on the win rate
-    if (actionVisits.get(action) == 0) return 0.0;
-    return actionRewards.get(action) / actionVisits.get(action);
+    int actionNumber = action.getActionNumber();
+    if (actionVisits[actionNumber] == 0) return 0.0;
+    return actionRewards[actionNumber] / actionVisits[actionNumber];
   }
 
   /**
@@ -60,18 +65,24 @@ public abstract class State<A extends Action, S extends State<A, S>> {
    * was obtained by selecting this action.
    */
   public void addReward(A action, double reward) {
-    addZerosForAction(action);
     stateVisits++;
-    actionVisits.put(action, actionVisits.get(action) + 1);
-    actionRewards.put(action, actionRewards.get(action) + reward);
+    actionVisits[action.getActionNumber()]++;
+    actionRewards[action.getActionNumber()] += reward;
+  }
+  
+  public void reset() {
+  }
+  
+  public void prepareForSimulation() {
   }
 
   /**
-   * Returns a fast evaluation of the value of this state, to be used to
-   * evaluate the situation when the tree search reaches the depth limit.
-   * This value should ideally be in the range [0,1].
+   * Returns a fast evaluation of the value of being in this state if you are
+   * the provided player, to be used to evaluate the situation when the tree
+   * search reaches the depth limit or in a terminal state. This value should
+   * ideally be in the range [0,1].
    */
-  public abstract double evaluate();
+  public abstract double evaluate(Player player);
 
   /**
    * Returns the number of times this state has been visited in this
@@ -87,29 +98,25 @@ public abstract class State<A extends Action, S extends State<A, S>> {
    * paper.
    */
   public int numberOfTimesActionSelected(A action) {
-    addZerosForAction(action);
-    return actionVisits.get(action);
+    return actionVisits[action.getActionNumber()];
   }
 
   /**
-   * Returns the result of performing the supplied action, which may have an
-   * associated reward and will have a resulting state. You should assume that
+   * Returns the result of performing the supplied action. There may be an
+   * associated reward for the provided player. You should assume that
    * the provided action will be a legal one. The reward should ideally be in
    * the range [0,1].
    */
-  public abstract ActionResult perform(A action);
+  public abstract ActionResult<A> perform(Player player, A action);
 
   /**
    * Returns whether or not this state is terminal. 
    */
   public abstract boolean isTerminal();
   
-  private void addZerosForAction(A action) {
-    if (!actionVisits.containsKey(action)) {
-      actionVisits.put(action, 0);
-    }
-    if (!actionRewards.containsKey(action)) {
-      actionRewards.put(action, 0.0);
-    }    
+  public abstract Player getCurrentPlayer();
+  
+  public Player getWinner() {
+    return null;
   }
 }
