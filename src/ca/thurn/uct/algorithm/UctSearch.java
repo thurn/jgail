@@ -3,9 +3,8 @@ package ca.thurn.uct.algorithm;
 import java.util.Random;
 
 import ca.thurn.uct.algorithm.State.ActionResult;
-import ca.thurn.uct.connect4.Output;
 
-public class UctSearch<A extends Action> implements ActionPicker<A> {
+public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A> {
 
   /**
    * Number of simulations to run before picking the best action from the
@@ -79,12 +78,6 @@ public class UctSearch<A extends Action> implements ActionPicker<A> {
         bestAction = action;
       }
     }
-    if (Output.getInstance().isInteractive()) {
-      for (A action : root.getActions()) {
-        System.out.print(action + "=" + (int)(root.averagePayoff(action) * 1000) + " ");
-      }
-      System.out.println("\n>>> UctSearch plays action " + bestAction);
-    }
     return bestAction;
   }
 
@@ -95,7 +88,7 @@ public class UctSearch<A extends Action> implements ActionPicker<A> {
    */
   double runSimulation(Player player, State<A> state, int depth) {
     if (depth > maxDepth || state.isTerminal()) {
-      return state.evaluate(player);
+      return evaluate(player, state);
     }
     A action = uctSelectAction(state);
     ActionResult<A> result = state.perform(player, action);
@@ -112,7 +105,7 @@ public class UctSearch<A extends Action> implements ActionPicker<A> {
   A uctSelectAction(State<A> state) {
     // We iterate through each action and return the one that maximizes
     // uctValue.
-    double maximum = 0.0;
+    double maximum = Double.NEGATIVE_INFINITY;
     A result = null;
     for (A action : state.getActions()) {
       double uctValue = state.averagePayoff(action) +
@@ -156,6 +149,10 @@ public class UctSearch<A extends Action> implements ActionPicker<A> {
     builder.append(maxDepth);
     builder.append("]");
     return builder.toString();
+  }
+
+  public double evaluate(Player player, State<A> state) {
+    return state.getWinner() == player ? 1.0 : 0.0;
   }
 
 }
