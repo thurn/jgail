@@ -77,14 +77,6 @@ public abstract class State<A extends Action> {
   }
 
   /**
-   * Returns a fast evaluation of the value of being in this state if you are
-   * the provided player, to be used to evaluate the situation when the tree
-   * search reaches the depth limit or in a terminal state. This value should
-   * ideally be in the range [0,1].
-   */
-  public abstract double evaluate(Player player);
-
-  /**
    * Returns the number of times this state has been visited in this
    * simulation. This is called N_{s,d} in the original UCT paper.
    */
@@ -108,6 +100,10 @@ public abstract class State<A extends Action> {
    * the range [0,1].
    */
   public abstract ActionResult<A> perform(Player player, A action);
+  
+  public State<A> unperform(Player player, A action) {
+    return null;
+  }
 
   /**
    * Returns whether or not this state is terminal. 

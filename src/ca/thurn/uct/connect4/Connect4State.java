@@ -59,6 +59,7 @@ public class Connect4State extends State<Connect4Action> {
   }
   
   Connect4State(Connect4Player currentPlayer, Connect4Player[][] board, Connect4Player winner) {
+    // TODO: are legal actions correctly updated as the board changes?
     super(actionsForPlayer(board, currentPlayer));
     this.board = board;
     this.currentPlayer = currentPlayer;
@@ -81,13 +82,9 @@ public class Connect4State extends State<Connect4Action> {
   }
 
   @Override
-  public double evaluate(Player player) {
-    return 0.0;
-  }
-
-  @Override
   public ActionResult<Connect4Action> perform(Player player, Connect4Action action) {
     int freeCell = 0;
+    Connect4Player[][] board = copyBoard(this.board);
     while (board[action.getColumnNumber()][freeCell] != null) {
       freeCell++;
     }
@@ -97,10 +94,19 @@ public class Connect4State extends State<Connect4Action> {
         currentPlayer == Connect4Player.RED ? Connect4Player.BLACK : Connect4Player.RED,
         board,
         nextStateWinner);
-    double reward = (nextStateWinner == player) ? 1.0 : 0.0;
-    board = null;
-    return new ActionResult<Connect4Action>(nextState, reward);
+    return new ActionResult<Connect4Action>(nextState, 0.0);
   }
+
+  public State<Connect4Action> unperform(Player player, Connect4Action action) {
+    int freeCell = 5;
+    while (board[action.getColumnNumber()][freeCell] == null) {
+      freeCell--;
+    }
+    board[action.getColumnNumber()][freeCell] = null;
+    return new Connect4State(currentPlayer == Connect4Player.RED ? Connect4Player.BLACK : Connect4Player.RED,
+        board,
+        null);
+  } 
 
   @Override
   public boolean isTerminal() {
@@ -155,7 +161,7 @@ public class Connect4State extends State<Connect4Action> {
   /**
    * Checks whether the provided player has won by making the provided move.
    */
-  Connect4Player computeWinner(Connect4Player player, int moveColumn, int moveRow) {
+  public Connect4Player computeWinner(Connect4Player player, int moveColumn, int moveRow) {
     // Vertical win?
     if (countGroupSize(moveColumn, moveRow - 1, Direction.S, player) >= 3) {
       return player;
@@ -180,8 +186,8 @@ public class Connect4State extends State<Connect4Action> {
     // No win
     return null;
   }
-  
-  int countGroupSize(int col, int row, Direction dir, Player player) {
+
+  public int countGroupSize(int col, int row, Direction dir, Player player) {
     if (row < 6 && row >= 0 && col < 7 && col >= 0
         && board[col][row] == player) {
       switch (dir) {
