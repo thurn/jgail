@@ -2,8 +2,6 @@ package ca.thurn.uct.algorithm;
 
 import java.util.Random;
 
-import ca.thurn.uct.algorithm.State.ActionResult;
-
 public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A> {
 
   /**
@@ -91,9 +89,8 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
       return evaluate(player, state);
     }
     A action = uctSelectAction(state);
-    ActionResult<A> result = state.perform(player, action);
-    double reward = result.getReward() + (discountRate *
-        runSimulation(player, result.getNextState(), depth + 1));
+    State<A> nextState = state.perform(action);
+    double reward = discountRate * runSimulation(player, nextState, depth + 1);
     state.addReward(action, reward);
     return reward;
   }

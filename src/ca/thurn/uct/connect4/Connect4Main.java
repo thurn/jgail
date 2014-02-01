@@ -9,10 +9,9 @@ import java.util.Map;
 import java.util.Random;
 
 import ca.thurn.uct.algorithm.ActionPicker;
-import ca.thurn.uct.algorithm.NegamaxSearchFast;
+import ca.thurn.uct.algorithm.NegamaxSearch;
 import ca.thurn.uct.algorithm.Player;
 import ca.thurn.uct.algorithm.State;
-import ca.thurn.uct.algorithm.State.ActionResult;
 import ca.thurn.uct.algorithm.UctSearch;
 
 /**
@@ -24,11 +23,6 @@ import ca.thurn.uct.algorithm.UctSearch;
  *   it falls roughly in the range [0.1, 1.0].
  * - For negamax, a search depth of 4 with about 7^3 simulations in the UCT
  *   evaluation function was the most successful.
- *   
- * Timing:
- * - original Average game length: 0:37
- * - copying board only between simulations: - 0:21
- * - eliminating action hash tables - 0:11
  */
 public class Connect4Main {
 
@@ -36,7 +30,7 @@ public class Connect4Main {
   
   private Random random = new Random();
   
-  private static final int TOURNAMENT_SIZE = 1000;
+  private static final int TOURNAMENT_SIZE = 10;
   
   private static enum RunMode {
     AI_VS_AI,
@@ -79,7 +73,7 @@ public class Connect4Main {
     Map<Connect4Player, ActionPicker<Connect4Action>> actionPickers =
         new HashMap<Connect4Player, ActionPicker<Connect4Action>>();
     actionPickers.put(Connect4Player.BLACK, new HumanActionPicker());
-    actionPickers.put(Connect4Player.RED, new NegamaxSearchFast<Connect4Action>());
+    actionPickers.put(Connect4Player.RED, new NegamaxSearch<Connect4Action>());
     return actionPickers;
   }
   
@@ -87,8 +81,8 @@ public class Connect4Main {
     startTime = System.currentTimeMillis();    
     List<ActionPicker<Connect4Action>> pickerList =
         new ArrayList<ActionPicker<Connect4Action>>();
-    pickerList.add(new UctSearch<Connect4Action>(100000));
-    pickerList.add(new NegamaxSearchFast<Connect4Action>());    
+    pickerList.add(new UctSearch<Connect4Action>());
+    pickerList.add(new NegamaxSearch<Connect4Action>());    
     int[] wins = new int[pickerList.size()];
 
     for (int i = 0; i < TOURNAMENT_SIZE; ++i) {
@@ -137,11 +131,9 @@ public class Connect4Main {
     while (!gameState.isTerminal()) {
       if (Output.getInstance().isInteractive()) System.out.println(gameState);
       ActionPicker<Connect4Action> actionPicker = actionPickers.get(gameState.getCurrentPlayer());
-      Connect4Action action = actionPicker.pickAction(gameState.getCurrentPlayer(),
-          new Connect4State((Connect4State)gameState));
-      ActionResult<Connect4Action> actionResult =
-          gameState.perform(gameState.getCurrentPlayer(), action);
-      gameState = actionResult.getNextState();
+      Connect4Action action =
+          actionPicker.pickAction(gameState.getCurrentPlayer(), gameState.copy());
+      gameState = gameState.perform(action);
     }
     if (Output.getInstance().isInteractive()) System.out.println(gameState);
     Player winner = gameState.getWinner();

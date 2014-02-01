@@ -9,24 +9,6 @@ public abstract class State<A extends Action> {
   protected int[] actionVisits;
   protected double[] actionRewards;
 
-  public static class ActionResult<A extends Action> {
-    private final State<A> nextState;
-    private final double reward;
-
-    public ActionResult(State<A> nextState, double reward) {
-      this.nextState = nextState;
-      this.reward = reward;
-    }
-
-    public State<A> getNextState() {
-      return nextState;
-    }
-
-    public double getReward() {
-      return reward;
-    }
-  }
-
   public State(List<A> actions) {
     this.actions = actions;
     this.stateVisits = 0;
@@ -47,6 +29,8 @@ public abstract class State<A extends Action> {
   public List<A> getActions() {
     return actions;
   }
+  
+  public abstract State<A> copy();
 
   /**
    * Returns the average payoff of taking the provided action from this
@@ -94,16 +78,20 @@ public abstract class State<A extends Action> {
   }
 
   /**
-   * Returns the result of performing the supplied action. There may be an
-   * associated reward for the provided player. You should assume that
-   * the provided action will be a legal one. The reward should ideally be in
-   * the range [0,1].
+   * Returns the result of performing the supplied action. You should assume
+   * that the provided action will be a legal one.
    */
-  public abstract ActionResult<A> perform(Player player, A action);
+  public abstract State<A> perform(A action);
   
-  public State<A> unperform(Player player, A action) {
-    return null;
-  }
+  /**
+   * Undoes the provided action, returning the resulting state.
+   */
+  public abstract State<A> unperform(A action);
+  
+  /**
+   * Returns the player whose turn will be after the provided player.
+   */
+  public abstract Player playerAfter(Player player);
 
   /**
    * Returns whether or not this state is terminal. 

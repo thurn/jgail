@@ -58,16 +58,16 @@ public class Connect4State extends State<Connect4Action> {
     this.winner = null;
   }
   
-  Connect4State(Connect4Player currentPlayer, Connect4Player[][] board, Connect4Player winner) {
-    // TODO: are legal actions correctly updated as the board changes?
+  private Connect4State(Connect4Player currentPlayer, Connect4Player[][] board,
+      Connect4Player winner) {
     super(actionsForPlayer(board, currentPlayer));
     this.board = board;
     this.currentPlayer = currentPlayer;
     this.winner = winner;
   }
   
-  public Connect4State(Connect4State state) {
-    this(state.currentPlayer, copyBoard(state.board), state.winner);    
+  public Connect4State copy() {
+    return new Connect4State(currentPlayer, copyBoard(board), winner);
   }
 
   static List<Connect4Action> actionsForPlayer(Connect4Player[][] board, Connect4Player player) {
@@ -82,30 +82,27 @@ public class Connect4State extends State<Connect4Action> {
   }
 
   @Override
-  public ActionResult<Connect4Action> perform(Player player, Connect4Action action) {
+  public Connect4State perform(Connect4Action action) {
     int freeCell = 0;
-    Connect4Player[][] board = copyBoard(this.board);
     while (board[action.getColumnNumber()][freeCell] != null) {
       freeCell++;
     }
     Connect4Player nextStateWinner = computeWinner(currentPlayer, action.getColumnNumber(), freeCell);
     board[action.getColumnNumber()][freeCell] = currentPlayer;    
     Connect4State nextState = new Connect4State(
-        currentPlayer == Connect4Player.RED ? Connect4Player.BLACK : Connect4Player.RED,
+        playerAfter(currentPlayer),
         board,
         nextStateWinner);
-    return new ActionResult<Connect4Action>(nextState, 0.0);
+    return nextState;
   }
 
-  public State<Connect4Action> unperform(Player player, Connect4Action action) {
+  public State<Connect4Action> unperform(Connect4Action action) {
     int freeCell = 5;
     while (board[action.getColumnNumber()][freeCell] == null) {
       freeCell--;
     }
     board[action.getColumnNumber()][freeCell] = null;
-    return new Connect4State(currentPlayer == Connect4Player.RED ? Connect4Player.BLACK : Connect4Player.RED,
-        board,
-        null);
+    return new Connect4State(playerAfter(currentPlayer), board, null);
   } 
 
   @Override
@@ -124,7 +121,7 @@ public class Connect4State extends State<Connect4Action> {
     this.originalBoard = copyBoard(board);
   }
   
-  protected static Connect4Player[][] copyBoard(Connect4Player[][] board) {
+  private static Connect4Player[][] copyBoard(Connect4Player[][] board) {
     Connect4Player[][] result = new Connect4Player[7][6];
     for (int i = 0; i < 7; ++i) {
       result[i] = Arrays.copyOf(board[i], 7);
@@ -218,6 +215,11 @@ public class Connect4State extends State<Connect4Action> {
   @Override
   public int numActions() {
     return 7;
+  }
+
+  @Override
+  public Connect4Player playerAfter(Player player) {
+    return player == Connect4Player.RED ? Connect4Player.BLACK : Connect4Player.RED;
   }
 
 }
