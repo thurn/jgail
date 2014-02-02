@@ -1,5 +1,6 @@
 package ca.thurn.uct.algorithm;
 
-public interface Player {
-
+public enum Player {
+  PLAYER_ONE,
+  PLAYER_TWO;
 }

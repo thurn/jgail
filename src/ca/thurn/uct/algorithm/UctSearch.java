@@ -33,17 +33,17 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
   private final Random random = new Random();
   
   public UctSearch() {
-    // The bias value here, 1/sqrt(2), was shown by Kocsis and Szepesvari to
-    // work well if rewards are in the range [0,1].
-    this(100000, 0.70710678, 0.999, 50);
+    this(100000);
   }
   
   public UctSearch(int numSimulations) {
-    this(numSimulations, 0.70710678, 0.999, 50);
+    // The bias value here, 1/sqrt(2), was shown by Kocsis and Szepesvari to
+    // work well if rewards are in the range [0,1].
+    this(numSimulations, 0.70710678);
   }
   
   public UctSearch(int numSimulations, double biasMultiplier) {
-    this(numSimulations, biasMultiplier, 0.999, 50);
+    this(numSimulations, biasMultiplier, 0.1);
   }
   
   public UctSearch(int numSimulations, double biasMultiplier, double discountRate) {
@@ -56,11 +56,12 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
     this.discountRate = discountRate;
     this.maxDepth = maxDepth;
   }
-  
+
   /**
    * Picks an action to take from the provided root node. 
    */
   public A pickAction(Player player, State<A> root) {
+//    System.out.println("PICK ACTION " + pac);    
     root.prepareForSimulation();
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(player, root, 0);
@@ -71,6 +72,7 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
     A bestAction = null;
     for (A action : root.getActions()) {
       double estimatedPayoff = root.averagePayoff(action);
+//      System.out.println(action + " " + estimatedPayoff);
       if (estimatedPayoff > bestPayoff) {
         bestPayoff = estimatedPayoff;
         bestAction = action;
@@ -78,7 +80,6 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
     }
     return bestAction;
   }
-
   
   /**
    * Runs a simulation to determine the total payoff associated with being at
@@ -86,11 +87,16 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
    */
   double runSimulation(Player player, State<A> state, int depth) {
     if (depth > maxDepth || state.isTerminal()) {
+//      System.out.println(evaluate(player, state));
       return evaluate(player, state);
     }
-    A action = uctSelectAction(state);
+    A action = uctSelectAction(state, depth);
+//    if (depth == 0) {
+//      System.out.println("action: " + action);
+//    }
     State<A> nextState = state.perform(action);
     double reward = discountRate * runSimulation(player, nextState, depth + 1);
+//    System.out.println(action + " " + reward);
     state.addReward(action, reward);
     return reward;
   }
@@ -99,7 +105,7 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
    * Selects an action to take from the provided state via the UCT
    * algorithm.
    */
-  A uctSelectAction(State<A> state) {
+  A uctSelectAction(State<A> state, int d) {
     // We iterate through each action and return the one that maximizes
     // uctValue.
     double maximum = Double.NEGATIVE_INFINITY;
@@ -149,7 +155,7 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
   }
 
   public double evaluate(Player player, State<A> state) {
-    return state.getWinner() == player ? 1.0 : 0.0;
+    return state.getWinner() == player ? 1.0 : -1.0;
   }
 
 }

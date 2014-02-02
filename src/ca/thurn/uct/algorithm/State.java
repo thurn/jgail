@@ -1,27 +1,39 @@
 package ca.thurn.uct.algorithm;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public abstract class State<A extends Action> {
 
-  protected List<A> actions;
-  protected int stateVisits;
-  protected int[] actionVisits;
-  protected double[] actionRewards;
+  List<A> actions;
+  int stateVisits;
+  Map<Action, Integer> actionVisits;
+  Map<Action, Double> actionRewards;
+  Map<A, State<A>> performCache;
 
-  public State(List<A> actions) {
-    this.actions = actions;
+  public State() {
     this.stateVisits = 0;
-    this.actionVisits = new int[numActions()];
-    this.actionRewards = new double[numActions()];
+    this.actionVisits = new HashMap<Action, Integer>();
+    this.actionRewards = new HashMap<Action, Double>();
+    this.performCache = new HashMap<A, State<A>>();
+  }
+  
+  public <K,V> V getWithDefault(Map<K, V> map, K key, V defaultValue) {
+    V ret = map.get(key);
+    if (ret == null) {
+        return defaultValue;
+    }
+    return ret;
   }
   
   /**
-   * Returns the number of possible actions from this state (more precisely,
-   * this should be the highest  possible return value for an action's
-   * getActionNumber() method).
+   * Sets the legal actions from this state. This should be called early in a state's life cycle,
+   * ideally from the constructor.
    */
-  public abstract int numActions();
+  public void setActions(List<A> actions) {
+    this.actions = actions;
+  }
 
   /**
    * Returns actions available from this state.
@@ -30,7 +42,20 @@ public abstract class State<A extends Action> {
     return actions;
   }
   
-  public abstract State<A> copy();
+  public State<A> copy() {
+    State<A> result = copyInternal();
+    result.actionRewards = new HashMap<Action, Double>(actionRewards);
+    result.actionVisits = new HashMap<Action, Integer>(actionVisits);
+    result.stateVisits = stateVisits;
+    result.performCache = new HashMap<A, State<A>>(performCache);
+    return result;
+  }
+  
+  /**
+   * Returns a copy of this state. It's OK to re-use immutable objects in the
+   * resulting state, but mutable ones should be deep-copied.
+   */
+  protected abstract State<A> copyInternal();
 
   /**
    * Returns the average payoff of taking the provided action from this
@@ -39,9 +64,8 @@ public abstract class State<A extends Action> {
    */
   public double averagePayoff(A action) {
     // Estimate payoff of an action based on the win rate
-    int actionNumber = action.getActionNumber();
-    if (actionVisits[actionNumber] == 0) return 0.0;
-    return actionRewards[actionNumber] / actionVisits[actionNumber];
+    if (getWithDefault(actionVisits, action, 0) == 0) return 0.0;
+    return getWithDefault(actionRewards, action, 0.0) / getWithDefault(actionVisits, action, 0);
   }
 
   /**
@@ -50,10 +74,17 @@ public abstract class State<A extends Action> {
    */
   public void addReward(A action, double reward) {
     stateVisits++;
-    actionVisits[action.getActionNumber()]++;
-    actionRewards[action.getActionNumber()] += reward;
+    actionVisits.put(action, getWithDefault(actionVisits, action, 0) + 1);
+    actionRewards.put(action, getWithDefault(actionRewards, action, 0.0) + reward);
   }
   
+  /**
+   * Set any shared mutate state back to how it was when prepareForSimulation
+   * was called. Note that it is usually NOT sufficient to simply assign a new
+   * value to a field here, because multiple State objects will have a
+   * reference to that state. You instead need to mutate the shared reference
+   * back to the original state.
+   */
   public void reset() {
   }
   
@@ -74,14 +105,25 @@ public abstract class State<A extends Action> {
    * paper.
    */
   public int numberOfTimesActionSelected(A action) {
-    return actionVisits[action.getActionNumber()];
+    return getWithDefault(actionVisits, action, 0);
   }
 
   /**
-   * Returns the result of performing the supplied action. You should assume
-   * that the provided action will be a legal one.
+   * Returns the resulting state after performing the supplied action. You
+   * should assume that the provided action will be a legal one.
    */
-  public abstract State<A> perform(A action);
+  public State<A> perform(A action) {
+    State<A> state = performCache.get(action);
+    if (state == null) {
+      State<A> result = performInternal(action);
+      performCache.put(action, result);
+      return result;
+    } else {
+      return state;
+    }
+  }
+  
+  protected abstract State<A> performInternal(A action);
   
   /**
    * Undoes the provided action, returning the resulting state.
@@ -91,7 +133,10 @@ public abstract class State<A extends Action> {
   /**
    * Returns the player whose turn will be after the provided player.
    */
-  public abstract Player playerAfter(Player player);
+  public Player playerAfter(Player player) {
+    return player == Player.PLAYER_ONE ? Player.PLAYER_TWO :
+      Player.PLAYER_ONE;
+  }
 
   /**
    * Returns whether or not this state is terminal. 
@@ -100,7 +145,5 @@ public abstract class State<A extends Action> {
   
   public abstract Player getCurrentPlayer();
   
-  public Player getWinner() {
-    return null;
-  }
+  public abstract Player getWinner();
 }

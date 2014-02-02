@@ -11,7 +11,7 @@ import ca.thurn.uct.algorithm.State;
  * This is a simple implementation of Connect4State that does not attempt
  * any optimization. It's largely immutable.
  */
-public class Connect4State extends State<Connect4Action> {
+public class CopyOfConnect4State extends State<Connect4Action> {
 
   private static List<Connect4Action> redActions;
   private static List<Connect4Action> blackActions;
@@ -51,21 +51,21 @@ public class Connect4State extends State<Connect4Action> {
   // still ongoing.
   final Player winner;
 
-  public Connect4State() {
+  public CopyOfConnect4State() {
     setActions(blackActions);
     this.board = new Player[7][6];
     this.currentPlayer = Player.PLAYER_ONE;
     this.winner = null;
   }
   
-  public Connect4State(Connect4State other) {
+  public CopyOfConnect4State(Connect4State other) {
     this.board = other.board;
     this.currentPlayer = other.currentPlayer;
     this.winner = other.winner;
     setActions(actionsForPlayer(board, currentPlayer));    
   }
   
-  private Connect4State(Player currentPlayer, Player[][] board,
+  private CopyOfConnect4State(Player currentPlayer, Player[][] board,
       Player winner) {
     setActions(actionsForPlayer(board, currentPlayer));
     this.board = board;
@@ -73,8 +73,8 @@ public class Connect4State extends State<Connect4Action> {
     this.winner = winner;
   }
   
-  protected Connect4State copyInternal() {
-    return new Connect4State(currentPlayer, copyBoard(board), winner);
+  protected CopyOfConnect4State copyInternal() {
+    return new CopyOfConnect4State(currentPlayer, copyBoard(board), winner);
   }
 
   static List<Connect4Action> actionsForPlayer(Player[][] board, Player player) {
@@ -89,7 +89,7 @@ public class Connect4State extends State<Connect4Action> {
   }
 
   @Override
-  public Connect4State performInternal(Connect4Action action) {
+  public CopyOfConnect4State performInternal(Connect4Action action) {
     Player[][] board = copyBoard(this.board);
     int freeCell = 0;
     while (board[action.getColumnNumber()][freeCell] != null) {
@@ -97,7 +97,7 @@ public class Connect4State extends State<Connect4Action> {
     }
     Player nextStateWinner = computeWinner(currentPlayer, action.getColumnNumber(), freeCell);
     board[action.getColumnNumber()][freeCell] = currentPlayer;    
-    Connect4State nextState = new Connect4State(
+    CopyOfConnect4State nextState = new CopyOfConnect4State(
         playerAfter(currentPlayer),
         board,
         nextStateWinner);
@@ -110,7 +110,7 @@ public class Connect4State extends State<Connect4Action> {
       freeCell--;
     }
     board[action.getColumnNumber()][freeCell] = null;
-    return new Connect4State(playerAfter(currentPlayer), board, null);
+    return new CopyOfConnect4State(playerAfter(currentPlayer), board, null);
   } 
 
   @Override
@@ -158,7 +158,7 @@ public class Connect4State extends State<Connect4Action> {
 
   @Override  
   public Player getWinner() {
-    return winner;
+    return null;
   }
   
   public Player getCurrentPlayer() {

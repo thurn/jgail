@@ -30,9 +30,4 @@ public class Connect4Action implements Action {
   public String toString() {
     return "[" + columnNumber + "]";
   }
-
-  @Override
-  public int getActionNumber() {
-    return columnNumber;
-  }
 }

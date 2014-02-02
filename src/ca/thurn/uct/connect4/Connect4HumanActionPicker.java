@@ -6,7 +6,7 @@ import ca.thurn.uct.algorithm.ActionPicker;
 import ca.thurn.uct.algorithm.Player;
 import ca.thurn.uct.algorithm.State;
 
-public class HumanActionPicker implements ActionPicker<Connect4Action> {
+public class Connect4HumanActionPicker implements ActionPicker<Connect4Action> {
 
   private Scanner in = new Scanner(System.in);
   
