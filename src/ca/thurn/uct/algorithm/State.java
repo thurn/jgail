@@ -6,11 +6,11 @@ import java.util.Map;
 
 public abstract class State<A extends Action> {
 
-  List<A> actions;
-  int stateVisits;
-  Map<Action, Integer> actionVisits;
-  Map<Action, Double> actionRewards;
-  Map<A, State<A>> performCache;
+  public List<A> actions;
+  public int stateVisits;
+  public Map<Action, Integer> actionVisits;
+  public Map<Action, Double> actionRewards;
+  public Map<A, State<A>> performCache;
 
   public State() {
     this.stateVisits = 0;
@@ -119,11 +119,18 @@ public abstract class State<A extends Action> {
       performCache.put(action, result);
       return result;
     } else {
+      if (performOnCachedStates()) {
+        state.performInternal(action);
+      }
       return state;
     }
   }
   
   protected abstract State<A> performInternal(A action);
+  
+  public boolean performOnCachedStates() {
+    return false;
+  }
   
   /**
    * Undoes the provided action, returning the resulting state.

@@ -41,16 +41,16 @@ public class Connect4Main {
   public static void main(String[] args) {
     List<ActionPicker<Connect4Action>> actionPickers =
         new ArrayList<ActionPicker<Connect4Action>>();
-    Connect4HumanActionPicker hap = new Connect4HumanActionPicker();
-//    UctSearch<Connect4Action> search1 = new UctSearch<Connect4Action>(10000);
-    UctSearch<Connect4Action> search2 = new UctSearch<Connect4Action>(10000);
-    actionPickers.add(hap);
+//    Connect4HumanActionPicker hap = new Connect4HumanActionPicker();
+    UctSearch<Connect4Action> search1 = new UctSearch<Connect4Action>(10000, 0.70710678);
+    UctSearch<Connect4Action> search2 = new UctSearch<Connect4Action>(10000, 0.70710678);
+    actionPickers.add(search1);
     actionPickers.add(search2);
     Map<ActionPicker<Connect4Action>, StateInitializer<Connect4Action>> initializers =
         new HashMap<ActionPicker<Connect4Action>, StateInitializer<Connect4Action>>();
-    initializers.put(hap, new Connect4StateCopyInitializer());
+    initializers.put(search1, new Connect4StateInitializer());
     initializers.put(search2, new Connect4StateCopyInitializer());
-    new Main<Connect4Action>(RunMode.VERSUS,
+    new Main<Connect4Action>(RunMode.TOURNAMENT,
         new Connect4InitialStateGenerator(),
         actionPickers,
         initializers);

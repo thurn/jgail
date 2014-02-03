@@ -58,19 +58,18 @@ public class Connect4State extends State<Connect4Action> {
     this.winner = null;
   }
   
-  public Connect4State(Connect4State other) {
-    this.board = other.board;
+  Connect4State(Connect4State other) {
+    this.board = copyBoard(other.board);
     this.currentPlayer = other.currentPlayer;
     this.winner = other.winner;
     setActions(actionsForPlayer(board, currentPlayer));    
   }
   
-  private Connect4State(Player currentPlayer, Player[][] board,
-      Player winner) {
-    setActions(actionsForPlayer(board, currentPlayer));
+  private Connect4State(Player currentPlayer, Player[][] board, Player winner) {
     this.board = board;
     this.currentPlayer = currentPlayer;
     this.winner = winner;
+    setActions(actionsForPlayer(board, currentPlayer));
   }
   
   protected Connect4State copyInternal() {
@@ -102,6 +101,11 @@ public class Connect4State extends State<Connect4Action> {
         board,
         nextStateWinner);
     return nextState;
+  }
+  
+  @Override
+  public boolean performOnCachedStates() {
+    return false;
   }
 
   public State<Connect4Action> unperform(Connect4Action action) {

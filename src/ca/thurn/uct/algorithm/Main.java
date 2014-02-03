@@ -62,6 +62,7 @@ public class Main<A extends Action> {
       Map<ActionPicker<A>, StateInitializer<A>> initializers) {
     startTime = System.currentTimeMillis();
     int[] wins = new int[actionPickers.size()];
+    int draws = 0;
 
     for (int i = 0; i < TOURNAMENT_SIZE; ++i) {
       Map<Player, ActionPicker<A>> pickerMap =
@@ -77,17 +78,19 @@ public class Main<A extends Action> {
       System.out.print(".");
       if (winner == Player.PLAYER_ONE) {
         wins[black]++;
-      } else if (winner == Player.PLAYER_TWO){
+      } else if (winner == Player.PLAYER_TWO) {
         wins[red]++;
+      } else if (winner == null) {
+        draws++;
       }
       
       if (i >= 10 && i % (TOURNAMENT_SIZE / 10) == 0) {
         // Print intermediate results
-        printTournamentResults(wins);        
+        printTournamentResults(wins, draws);        
       }
     }
     
-    printTournamentResults(wins);
+    printTournamentResults(wins, draws);
     
     long duration = System.currentTimeMillis() - startTime;
     String elapsed = new SimpleDateFormat("hh:mm:ss").format(new Date(duration));
@@ -96,11 +99,12 @@ public class Main<A extends Action> {
         " per tournament)");    
   }
 
-  private void printTournamentResults(int[] wins) {
+  private void printTournamentResults(int[] wins, int draws) {
     System.out.println("===== Tournament Results ======");
     for (int i = 0; i < wins.length; ++i) {
       System.out.println("Player #" + i + ": " + wins[i] + " wins");      
     }
+    System.out.println(draws + " draws");
   }
 
   private Player playGame(Map<Player, ActionPicker<A>> pickerMap,
@@ -113,6 +117,9 @@ public class Main<A extends Action> {
       A action =
           actionPicker.pickAction(gameState.getCurrentPlayer(),
               initializer.initializeFromState(gameState.copy()));
+      if (Output.getInstance().isInteractive()) {
+        System.out.println(actionPicker + " Picked action " + action);
+      }
       gameState = gameState.perform(action);
     }
     if (Output.getInstance().isInteractive()) System.out.println(gameState);
