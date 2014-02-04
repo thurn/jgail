@@ -113,25 +113,11 @@ public abstract class State<A extends Action> {
    * should assume that the provided action will be a legal one.
    */
   public State<A> perform(A action) {
-    State<A> state = performCache.get(action);
-    if (state == null) {
-      State<A> result = performInternal(action);
-      performCache.put(action, result);
-      return result;
-    } else {
-      if (performOnCachedStates()) {
-        state.performInternal(action);
-      }
-      return state;
-    }
+    return performInternal(action);
   }
   
   protected abstract State<A> performInternal(A action);
-  
-  public boolean performOnCachedStates() {
-    return false;
-  }
-  
+
   /**
    * Undoes the provided action, returning the resulting state.
    */

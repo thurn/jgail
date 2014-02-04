@@ -19,7 +19,7 @@ public class Connect4Action implements Action {
 		this.columnNumber = columnNumber;
 	}
 
-  int getColumnNumber() {
+  public int getColumnNumber() {
     return columnNumber;
   }
 

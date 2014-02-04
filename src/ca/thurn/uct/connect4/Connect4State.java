@@ -102,11 +102,6 @@ public class Connect4State extends State<Connect4Action> {
         nextStateWinner);
     return nextState;
   }
-  
-  @Override
-  public boolean performOnCachedStates() {
-    return false;
-  }
 
   public State<Connect4Action> unperform(Connect4Action action) {
     int freeCell = 5;

@@ -93,7 +93,7 @@ public class Main<A extends Action> {
     printTournamentResults(wins, draws);
     
     long duration = System.currentTimeMillis() - startTime;
-    String elapsed = new SimpleDateFormat("hh:mm:ss").format(new Date(duration));
+    String elapsed = new SimpleDateFormat("mm:ss").format(new Date(duration));
     String perTournament = new SimpleDateFormat("mm:ss").format(new Date(duration / TOURNAMENT_SIZE));
     System.out.println("Tournament finished in " + elapsed + " (" + perTournament + 
         " per tournament)");    

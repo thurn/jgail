@@ -2,6 +2,8 @@ package ca.thurn.uct.algorithm;
 
 import java.util.Random;
 
+import ca.thurn.uct.connect4.Connect4Action;
+
 public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A> {
 
   /**
@@ -61,21 +63,24 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
    * Picks an action to take from the provided root node. 
    */
   public A pickAction(Player player, State<A> root) {
-//    System.out.println("PICK ACTION " + pac);    
     root.prepareForSimulation();
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(player, root, 0);
       root.reset();
     }
-    // Return action with highest estimated payoff
     double bestPayoff = Double.NEGATIVE_INFINITY;
     A bestAction = null;
     for (A action : root.getActions()) {
       double estimatedPayoff = root.averagePayoff(action);
-//      System.out.println(action + " " + estimatedPayoff);
       if (estimatedPayoff > bestPayoff) {
         bestPayoff = estimatedPayoff;
         bestAction = action;
+      }
+    }
+    if (((Connect4Action)bestAction).getColumnNumber() != 3) {
+      for (int i = 0; i < 50; ++i) {
+        runSimulation(player, root, 0);
+        root.reset();
       }
     }
     return bestAction;
@@ -87,16 +92,12 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
    */
   double runSimulation(Player player, State<A> state, int depth) {
     if (depth > maxDepth || state.isTerminal()) {
-//      System.out.println(evaluate(player, state));
       return evaluate(player, state);
     }
     A action = uctSelectAction(state, depth);
-//    if (depth == 0) {
-//      System.out.println("action: " + action);
-//    }
+
     State<A> nextState = state.perform(action);
     double reward = discountRate * runSimulation(player, nextState, depth + 1);
-//    System.out.println(action + " " + reward);
     state.addReward(action, reward);
     return reward;
   }
