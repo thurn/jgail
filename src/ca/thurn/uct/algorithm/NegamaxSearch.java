@@ -1,5 +1,7 @@
 package ca.thurn.uct.algorithm;
 
+import ca.thurn.uct.algorithm.State.PerformMode;
+
 
 public class NegamaxSearch<A extends Action> implements ActionPicker<A> {
   
@@ -29,7 +31,7 @@ public class NegamaxSearch<A extends Action> implements ActionPicker<A> {
     double bestValue = Double.NEGATIVE_INFINITY;
     A bestAction = null;
     for (A action : state.getActions()) {     
-      state = state.perform(action);
+      state = state.perform(action, PerformMode.IGNORE_STATE);
       Player newPlayer = state.playerAfter(player);
       double value = -1 * search(newPlayer, state, maxDepth - 1, -beta, -alpha).getScore();
       state = state.unperform(action);

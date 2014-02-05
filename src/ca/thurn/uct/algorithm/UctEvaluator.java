@@ -4,7 +4,10 @@ public class UctEvaluator<A extends Action> implements Evaluator<A> {
   private final UctSearch<A> uctSearch;  
 
   public UctEvaluator(int numSimulations) {
-    this.uctSearch = new UctSearch<A>(numSimulations);
+    this.uctSearch = UctSearch
+        .<A>builder()
+        .setNumSimulations(numSimulations)
+        .build();
   }
   
   @Override

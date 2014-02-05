@@ -89,7 +89,6 @@ public class Connect4State extends State<Connect4Action> {
 
   @Override
   public Connect4State performInternal(Connect4Action action) {
-    Player[][] board = copyBoard(this.board);
     int freeCell = 0;
     while (board[action.getColumnNumber()][freeCell] != null) {
       freeCell++;

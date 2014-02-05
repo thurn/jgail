@@ -2,61 +2,112 @@ package ca.thurn.uct.algorithm;
 
 import java.util.Random;
 
-import ca.thurn.uct.connect4.Connect4Action;
+import ca.thurn.uct.algorithm.State.PerformMode;
 
-public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A> {
+public class UctSearch<A extends Action> implements ActionPicker<A> {
+  
+  public static class Builder<A extends Action> {
+    private int numSimulations = 100000;
+    
+    // The bias value here, 1/sqrt(2), was shown by Kocsis and Szepesvari to
+    // work well if rewards are in the range [0,1].    
+    private double explorationBias = 0.70710678;
 
-  /**
-   * Number of simulations to run before picking the best action from the
-   * root node.
-   */
+    private double discountRate = 0.999;
+    
+    private int maxDepth = 50;
+    
+    private boolean multiLevelSearch = false;
+    
+    private Evaluator<A> evaluator = new Evaluator<A>() {
+      @Override
+      public double evaluate(Player player, State<A> state) {
+        return state.getWinner() == player ? 1.0 : -1.0;
+      }
+    };
+    
+    public UctSearch<A> build() {
+      return new UctSearch<A>(numSimulations, explorationBias, discountRate, maxDepth,
+          multiLevelSearch, evaluator);
+    }
+
+    /**
+     * Number of simulations to run before picking the best action from the
+     * root node.
+     */
+    public Builder<A> setNumSimulations(int numSimulations) {
+      this.numSimulations = numSimulations;
+      return this;
+    }
+
+    /**
+     * The multiplier applied to the uct bias, named C_p in the original UCT
+     * paper. A higher number places more emphasis on exploration, a lower
+     * number places more emphasis on exploitation.
+     */
+    public Builder<A> setExplorationBias(double explorationBias) {
+      this.explorationBias = explorationBias;
+      return this;
+    }
+
+    /**
+     * The rate at which rewards should be discounted in the future, used to
+     * compute the present value of future rewards. This way, rewards further
+     * in the future are worth less. This captures our uncertainty about the
+     * future, as well as helping avoid infinite reward cycles, etc.
+     */
+    public Builder<A> setDiscountRate(double discountRate) {
+      this.discountRate = discountRate;
+      return this;
+    }
+
+    /**
+     * The maximum depth the search to in the simulation.
+     */
+    public Builder<A> setMaxDepth(int maxDepth) {
+      this.maxDepth = maxDepth;
+      return this;
+    }
+
+    /**
+     * If false, only random moves will be selected at search levels other
+     * than the root. 
+     */
+    public Builder<A> setMultiLevelSearch(boolean multiLevelSearch) {
+      this.multiLevelSearch = multiLevelSearch;
+      return this;
+    }
+
+    /**
+     * Function to use to evaluate the heuristic value of a terminal search
+     * node.
+     */
+    public Builder<A> setEvaluator(Evaluator<A> evaluator) {
+      this.evaluator = evaluator;
+      return this;
+    }
+  }
+  
+  public static <A extends Action> Builder<A> builder() {
+    return new Builder<A>();
+  }
+
   private final int numSimulations;  
-  
-  /**
-   * The multiplier applied to the uct bias, named C_p in the original UCT
-   * paper. A higher number places more emphasis on exploration, a lower
-   * number places more emphasis on exploitation.
-   */
-  private final double biasMultiplier;
-  
-  /**
-   * The rate at which rewards should be discounted in the future, used to
-   * compute the present value of future rewards. This way, rewards further
-   * in the future are worth less. This captures our uncertainty about the
-   * future, as well as helping avoid infinite reward cycles, etc.
-   */
+  private final double explorationBias;
   private final double discountRate;
-
-  /**
-   * The maximum depth the search to in the simulation.
-   */
   private final int maxDepth;
-
+  private final boolean multiLevelSearch;
+  private final Evaluator<A> evaluator;  
   private final Random random = new Random();
   
-  public UctSearch() {
-    this(100000);
-  }
-  
-  public UctSearch(int numSimulations) {
-    // The bias value here, 1/sqrt(2), was shown by Kocsis and Szepesvari to
-    // work well if rewards are in the range [0,1].
-    this(numSimulations, 0.70710678);
-  }
-  
-  public UctSearch(int numSimulations, double biasMultiplier) {
-    this(numSimulations, biasMultiplier, 0.1);
-  }
-  
-  public UctSearch(int numSimulations, double biasMultiplier, double discountRate) {
-    this(numSimulations, biasMultiplier, discountRate, 50);
-  }  
-  
-  public UctSearch(int numSimulations, double biasMultiplier, double discountRate, int maxDepth) {
-    this.biasMultiplier = biasMultiplier;
+  private UctSearch(int numSimulations, double explorationBias, double discountRate, int maxDepth,
+      boolean multiLevelSearch, Evaluator<A> evaluator) {
     this.numSimulations = numSimulations;
+    this.explorationBias = explorationBias;
     this.discountRate = discountRate;
     this.maxDepth = maxDepth;
+    this.multiLevelSearch = multiLevelSearch;
+    this.evaluator = evaluator;
   }
 
   /**
@@ -77,12 +128,6 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
         bestAction = action;
       }
     }
-    if (((Connect4Action)bestAction).getColumnNumber() != 3) {
-      for (int i = 0; i < 50; ++i) {
-        runSimulation(player, root, 0);
-        root.reset();
-      }
-    }
     return bestAction;
   }
   
@@ -92,11 +137,11 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
    */
   double runSimulation(Player player, State<A> state, int depth) {
     if (depth > maxDepth || state.isTerminal()) {
-      return evaluate(player, state);
+      return evaluator.evaluate(player, state);
     }
     A action = uctSelectAction(state, depth);
-
-    State<A> nextState = state.perform(action);
+    State<A> nextState = multiLevelSearch ? state.perform(action, PerformMode.TRANSFER_STATE) :
+        state.perform(action, PerformMode.IGNORE_STATE);
     double reward = discountRate * runSimulation(player, nextState, depth + 1);
     state.addReward(action, reward);
     return reward;
@@ -135,8 +180,10 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
   double uctBias(int visitsToState, int visitsToAction) {
     // We return 1000000000 if we've never visited this state or action before
     // in order to prioritize nodes we have not yet explored.
-    if (visitsToState == 0 || visitsToAction == 0) return 1000000000.0;
-    return 2.0 * biasMultiplier *
+    if (visitsToState == 0 || visitsToAction == 0) {
+      return 1000000000.0;
+    }
+    return 2.0 * explorationBias *
         Math.sqrt(Math.log(visitsToState) / visitsToAction);
   }
 
@@ -144,7 +191,7 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
   public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append("UctSearch [biasMultiplier=");
-    builder.append(biasMultiplier);
+    builder.append(explorationBias);
     builder.append(", numSimulations=");
     builder.append(numSimulations);
     builder.append(", discountRate=");
@@ -154,9 +201,4 @@ public class UctSearch<A extends Action> implements ActionPicker<A>, Evaluator<A
     builder.append("]");
     return builder.toString();
   }
-
-  public double evaluate(Player player, State<A> state) {
-    return state.getWinner() == player ? 1.0 : -1.0;
-  }
-
 }

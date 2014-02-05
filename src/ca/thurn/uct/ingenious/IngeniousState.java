@@ -398,13 +398,4 @@ public class IngeniousState extends State<IngeniousAction> {
       pieceNumber++;
     }
   }
-  
-  public static void main(String[] args) {
-    IngeniousState is = new IngeniousState();
-    IngeniousAction action = new IngeniousAction(is.hands.get(Player.PLAYER_ONE).get(0),
-        5, 5, 5, 4);
-    State<IngeniousAction> nis = is.perform(action);
-    System.out.println(nis);
-  }
-
 }

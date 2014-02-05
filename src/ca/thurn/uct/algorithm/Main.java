@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import ca.thurn.uct.algorithm.State.PerformMode;
+
 /**
  * 
  * Experimental results for the Connect4 domain:
@@ -18,31 +20,44 @@ import java.util.Random;
  *   evaluation function was the most successful.
  */
 public class Main<A extends Action> {
-
-  private State<A> gameState;
-  
-  private Random random = new Random();
-  
-  private static final int TOURNAMENT_SIZE = 10;
-  
   public static enum RunMode {
     VERSUS,
     TOURNAMENT
-  }
+  }  
   
-  /**
-   * Change this constant to run the program in different modes.
-   */
+  private State<A> gameState;
+  private int tournamentSize = 10;  
+  private Random random = new Random();
   private long startTime;
   private final InitialStateGenerator<A> initialStateGenerator;
   private final List<ActionPicker<A>> actionPickers;
-
-  public Main(RunMode runMode, InitialStateGenerator<A> initialStateGenerator,
-      List<ActionPicker<A>> actionPickers,
-      Map<ActionPicker<A>, StateInitializer<A>> initializers) {
+  private final Map<ActionPicker<A>, StateInitializer<A>> initializers;
+  
+  private Main(int tournamentSize, InitialStateGenerator<A> initialStateGenerator,
+      List<ActionPicker<A>> actionPickers, Map<ActionPicker<A>, StateInitializer<A>> initializers,
+      RunMode runMode) {
+    this.tournamentSize = tournamentSize;
     this.initialStateGenerator = initialStateGenerator;
     this.actionPickers = actionPickers;
+    this.initializers = initializers;
+    this.runMode = runMode;
+  }
+
+  private final RunMode runMode;
+
+  public Main(int tournamentSize, InitialStateGenerator<A> initialStateGenerator,
+      List<ActionPicker<A>> actionPickers,
+      Map<ActionPicker<A>, StateInitializer<A>> initializers) {
+    this(tournamentSize, initialStateGenerator, actionPickers, initializers, RunMode.TOURNAMENT);
+  }
   
+  public Main(InitialStateGenerator<A> initialStateGenerator,
+      List<ActionPicker<A>> actionPickers,
+      Map<ActionPicker<A>, StateInitializer<A>> initializers) {
+    this(0, initialStateGenerator, actionPickers, initializers, RunMode.VERSUS);
+  }
+
+  public void run() {
     switch(runMode) {
       case VERSUS:
         Output.getInstance().setIsInteractive(true);
@@ -64,7 +79,7 @@ public class Main<A extends Action> {
     int[] wins = new int[actionPickers.size()];
     int draws = 0;
 
-    for (int i = 0; i < TOURNAMENT_SIZE; ++i) {
+    for (int i = 0; i < tournamentSize; ++i) {
       Map<Player, ActionPicker<A>> pickerMap =
           new HashMap<Player, ActionPicker<A>>();
       int black = random.nextInt(actionPickers.size());
@@ -84,7 +99,7 @@ public class Main<A extends Action> {
         draws++;
       }
       
-      if (i >= 10 && i % (TOURNAMENT_SIZE / 10) == 0) {
+      if (i >= 10 && i % (tournamentSize / 10) == 0) {
         // Print intermediate results
         printTournamentResults(wins, draws);        
       }
@@ -94,7 +109,7 @@ public class Main<A extends Action> {
     
     long duration = System.currentTimeMillis() - startTime;
     String elapsed = new SimpleDateFormat("mm:ss").format(new Date(duration));
-    String perTournament = new SimpleDateFormat("mm:ss").format(new Date(duration / TOURNAMENT_SIZE));
+    String perTournament = new SimpleDateFormat("mm:ss").format(new Date(duration / tournamentSize));
     System.out.println("Tournament finished in " + elapsed + " (" + perTournament + 
         " per tournament)");    
   }
@@ -120,7 +135,7 @@ public class Main<A extends Action> {
       if (Output.getInstance().isInteractive()) {
         System.out.println(actionPicker + " Picked action " + action);
       }
-      gameState = gameState.perform(action);
+      gameState = gameState.perform(action, PerformMode.IGNORE_STATE);
     }
     if (Output.getInstance().isInteractive()) System.out.println(gameState);
     Player winner = gameState.getWinner();
