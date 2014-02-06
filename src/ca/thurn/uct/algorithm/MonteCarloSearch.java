@@ -4,16 +4,35 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import ca.thurn.uct.algorithm.State.PerformMode;
 import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.Agent;
+import ca.thurn.uct.core.Evaluator;
 import ca.thurn.uct.core.Player;
+import ca.thurn.uct.core.State;
 
-public class MonteCarloSearch<A extends Action> implements ActionPicker<A> {
+/**
+ * An agent which picks actions by running repeated random simulations from
+ * the current state and returning the one that had the best outcome.
+ * 
+ * @param <A> Action type to use.
+ */
+public class MonteCarloSearch<A extends Action> implements Agent<A> {
   
+  /**
+   * Builder for Monte Carlo Search.
+   *
+   * @param <A> Action type to use.
+   */
   public static class Builder<A extends Action> {
-    private int numSimulations = 100000;
+    private final State<A> stateRepresentation;
     
+    private int numSimulations = 100000;
+
     private int maxDepth = 50;
+    
+    private Builder(State<A> stateRepresentation) {
+      this.stateRepresentation = stateRepresentation;
+    }
     
     private Evaluator<A> evaluator = new Evaluator<A>() {
       @Override
@@ -22,13 +41,16 @@ public class MonteCarloSearch<A extends Action> implements ActionPicker<A> {
       }
     };
     
+    /**
+     * @return A new MonteCarloSearch instance.
+     */
     public MonteCarloSearch<A> build() {
-      return new MonteCarloSearch<A>(numSimulations, maxDepth, evaluator);
+      return new MonteCarloSearch<A>(stateRepresentation, numSimulations, maxDepth, evaluator);
     }
 
     /**
      * Number of simulations to run before picking the best action from the
-     * root node.
+     * root node. Default value: 100000.
      */
     public Builder<A> setNumSimulations(int numSimulations) {
       this.numSimulations = numSimulations;
@@ -36,7 +58,7 @@ public class MonteCarloSearch<A extends Action> implements ActionPicker<A> {
     }
 
     /**
-     * The maximum depth the search to in the simulation.
+     * The maximum depth the search to in the simulation. Default value: 50.
      */
     public Builder<A> setMaxDepth(int maxDepth) {
       this.maxDepth = maxDepth;
@@ -45,7 +67,8 @@ public class MonteCarloSearch<A extends Action> implements ActionPicker<A> {
 
     /**
      * Function to use to evaluate the heuristic value of a terminal search
-     * node.
+     * node. Default value returns -1 for losses, 1 for wins, and 0 for all
+     * other states.
      */
     public Builder<A> setEvaluator(Evaluator<A> evaluator) {
       this.evaluator = evaluator;
@@ -53,31 +76,53 @@ public class MonteCarloSearch<A extends Action> implements ActionPicker<A> {
     }
   }
   
-  public static <A extends Action> Builder<A> builder() {
-    return new Builder<A>();
+  /**
+   * @param stateRepresentation State representation to use.
+   * @return A new Builder for a MonteCarloSearch agent.
+   */
+  public static <A extends Action> Builder<A> builder(State<A> stateRepresentation) {
+    return new Builder<A>(stateRepresentation);
   }
 
+  private final State<A> stateRepresentation;  
   private final int numSimulations;  
   private final int maxDepth;
   private final Evaluator<A> evaluator;  
   private final Random random = new Random();
   private Map<A, Double> actionRewards = new HashMap<A, Double>(); 
   
-  private MonteCarloSearch(int numSimulations, int maxDepth, Evaluator<A> evaluator) {
+  /**
+   * Field-initializing constructor.
+   * 
+   * @param stateRepresentation
+   * @param numSimulations
+   * @param maxDepth
+   * @param evaluator
+   */
+  private MonteCarloSearch(State<A> stateRepresentation, int numSimulations, int maxDepth,
+      Evaluator<A> evaluator) {
+    this.stateRepresentation = stateRepresentation;
     this.numSimulations = numSimulations;
     this.maxDepth = maxDepth;
     this.evaluator = evaluator;
   }
 
   /**
-   * Picks an action to take from the provided root node. 
+   * {@inheritDoc}
    */
+  @Override
+  public State<A> getStateRepresentation() {
+    return stateRepresentation;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public A pickAction(Player player, State<A> root) {
-    root.prepareForSimulation();
     actionRewards = new HashMap<A, Double>(); 
     for (int i = 0; i < numSimulations; ++i) {
-      runSimulation(player, root, 0);
-      root.reset();
+      runSimulation(player, root.copy(), 0);
     }
     double bestReward = Double.NEGATIVE_INFINITY;
     A bestAction = null;
@@ -90,17 +135,33 @@ public class MonteCarloSearch<A extends Action> implements ActionPicker<A> {
     return bestAction;
   }
   
+  @Override
+  public String toString() {
+    StringBuilder builder2 = new StringBuilder();
+    builder2.append("MonteCarloSearch [numSimulations=");
+    builder2.append(numSimulations);
+    builder2.append(", maxDepth=");
+    builder2.append(maxDepth);
+    builder2.append("]");
+    return builder2.toString();
+  }
+
   /**
-   * Runs a simulation to determine the total payoff associated with being at
-   * the provided state, tracking the depth in the search tree in "depth".  
+   * Runs a simulation to determine the total reward associated with being at
+   * the provided state.
+   *
+   * @param player The player who we are optimizing for.
+   * @param state The current game state.
+   * @param depth The depth in the search.
+   * @return The reward associated with being at this state.
    */
-  double runSimulation(Player player, State<A> state, int depth) {
+  private double runSimulation(Player player, State<A> state, int depth) {
     if (depth > maxDepth || state.isTerminal()) {
       return evaluator.evaluate(player, state);
     }
     A action = randomAction(state);
-    State<A> nextState = state.perform(action, PerformMode.IGNORE_STATE);
-    double reward = runSimulation(player, nextState, depth + 1);
+    state.perform(action);
+    double reward = runSimulation(player, state, depth + 1);
     if (depth == 0) {
       Double current = actionRewards.get(action);
       actionRewards.put(action, current == null ? 0 : current + reward);
@@ -109,9 +170,10 @@ public class MonteCarloSearch<A extends Action> implements ActionPicker<A> {
   }
 
   /**
-   * Selects an action to take from the provided state randomly
+   * @param state The current game state.
+   * @return A random action possible from this state.
    */
-  A randomAction(State<A> state) {
+  private A randomAction(State<A> state) {
     return state.getActions().get(random.nextInt(state.getActions().size()));
   }
 }

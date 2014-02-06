@@ -65,7 +65,7 @@ public class C4State implements State<C4Action> {
    * {@inheritDoc}
    */
   @Override
-  public Iterable<C4Action> getActions() {
+  public List<C4Action> getActions() {
     return actions;
   }
 
@@ -98,7 +98,7 @@ public class C4State implements State<C4Action> {
     currentPlayer = playerBefore(currentPlayer);
     actions = actionsForCurrentPlayer();
   }
-  
+
   /**
    * {@inheritDoc}
    */
@@ -122,12 +122,13 @@ public class C4State implements State<C4Action> {
    * {@inheritDoc}
    */
   @Override
-  public void initialize(State<C4Action> state) {
+  public C4State initialize(State<C4Action> state) {
     C4State temp = (C4State)state.copy();
     this.board = temp.board;
     this.winner = temp.winner;
     this.currentPlayer = temp.currentPlayer;
     this.actions = temp.actions;
+    return this;
   }
 
   /**
@@ -170,6 +171,23 @@ public class C4State implements State<C4Action> {
   @Override
   public Player playerBefore(Player player) {
     return playerAfter(player);
+  }
+  
+  @Override  
+  public String toString() {
+    StringBuilder result = new StringBuilder();
+    for (int row = 5; row >= 0; --row) {
+      for (int column = 0; column < 7; ++column) {
+        Player p = board[column][row];
+        if (p == null) {
+          result.append("-");
+        } else {
+          result.append(p ==  Player.PLAYER_TWO ? "X" : "O");
+        }
+      }
+      result.append("\n");
+    }
+    return result.toString();
   }
   
   /**

@@ -2,10 +2,11 @@ package ca.thurn.uct.algorithm;
 
 import ca.thurn.uct.algorithm.State.PerformMode;
 import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Player;
 
 
-public class NegamaxSearch<A extends Action> implements ActionPicker<A> {
+public class NegamaxSearch<A extends Action> implements Agent<A> {
   
   private final int searchDepth;
   
@@ -51,10 +52,22 @@ public class NegamaxSearch<A extends Action> implements ActionPicker<A> {
     return new ActionScore<A>(bestValue, bestAction);
   }
 
-  @Override
   public A pickAction(Player player, State<A> rootNode) {
     ActionScore<A> as = search(player, rootNode, searchDepth, Double.NEGATIVE_INFINITY,
         Double.POSITIVE_INFINITY);
     return as.getAction();
   }
+
+  @Override
+  public A pickAction(Player player, ca.thurn.uct.core.State<A> rootNode) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public ca.thurn.uct.core.State<A> getStateRepresentation() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
 }
