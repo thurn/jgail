@@ -2,8 +2,6 @@ package ca.thurn.uct.ingenious;
 
 import java.util.Random;
 
-import ca.thurn.uct.algorithm.Output;
-
 public enum IngeniousHex {
   ORANGE,
   YELLOW,
@@ -33,7 +31,8 @@ public enum IngeniousHex {
   }
   
   public String toString() {
-    if (Output.getInstance().isColor()) {
+//    if (Output.getInstance().isColor()) {
+    if (true) {
       switch(this) {
         case BLUE:
           return ANSI_BLUE + "BB" + ANSI_RESET;

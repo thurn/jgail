@@ -103,11 +103,12 @@ public class C4State implements State<C4Action> {
    * {@inheritDoc}
    */
   @Override
-  public void setToStartingConditions() {
+  public C4State setToStartingConditions() {
     board = new Player[BOARD_WIDTH][BOARD_HEIGHT];
     winner = null;
     currentPlayer = Player.PLAYER_ONE;
     actions = actionsForCurrentPlayer();
+    return this;
   }
 
   /**

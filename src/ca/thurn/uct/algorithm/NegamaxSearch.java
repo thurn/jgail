@@ -2,6 +2,7 @@ package ca.thurn.uct.algorithm;
 
 import ca.thurn.uct.algorithm.State.PerformMode;
 import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Player;
 
@@ -17,7 +18,7 @@ public class NegamaxSearch<A extends Action> implements Agent<A> {
   }
   
   public NegamaxSearch(int searchDepth) {
-    this(searchDepth, new UctEvaluator<A>(200));
+    this(searchDepth, null/*new UctEvaluator<A>(200)*/);
   }
   
   public NegamaxSearch(int searchDepth, Evaluator<A> evaluator) {

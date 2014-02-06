@@ -51,6 +51,7 @@ public class MonteCarloSearch<A extends Action> implements Agent<A> {
     /**
      * Number of simulations to run before picking the best action from the
      * root node. Default value: 100000.
+     * @return this.
      */
     public Builder<A> setNumSimulations(int numSimulations) {
       this.numSimulations = numSimulations;
@@ -59,6 +60,7 @@ public class MonteCarloSearch<A extends Action> implements Agent<A> {
 
     /**
      * The maximum depth the search to in the simulation. Default value: 50.
+     * @return this.
      */
     public Builder<A> setMaxDepth(int maxDepth) {
       this.maxDepth = maxDepth;
@@ -69,6 +71,7 @@ public class MonteCarloSearch<A extends Action> implements Agent<A> {
      * Function to use to evaluate the heuristic value of a terminal search
      * node. Default value returns -1 for losses, 1 for wins, and 0 for all
      * other states.
+     * @return this.
      */
     public Builder<A> setEvaluator(Evaluator<A> evaluator) {
       this.evaluator = evaluator;

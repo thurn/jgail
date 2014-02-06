@@ -1,10 +1,5 @@
 package ca.thurn.uct.ingenious;
 
-import ca.thurn.uct.algorithm.InitialStateGenerator;
-import ca.thurn.uct.algorithm.Main;
-import ca.thurn.uct.algorithm.Output;
-import ca.thurn.uct.algorithm.Main.RunMode;
-import ca.thurn.uct.algorithm.State;
 
 public class IngeniousMain {
   public static void main(String[] args) {
