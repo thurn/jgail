@@ -4,27 +4,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import ca.thurn.uct.algorithm.Player;
 import ca.thurn.uct.algorithm.State;
+import ca.thurn.uct.core.Player;
 
 /**
  * This is a simple implementation of Connect4State that does not attempt
  * any optimization. It's largely immutable.
  */
-public class Connect4State extends State<Connect4Action> {
+public class Connect4State extends State<C4Action> {
 
-  private static List<Connect4Action> redActions;
-  private static List<Connect4Action> blackActions;
+  private static List<C4Action> redActions;
+  private static List<C4Action> blackActions;
 
   static {
-    redActions = new ArrayList<Connect4Action>();
+    redActions = new ArrayList<C4Action>();
     for (int i = 0; i < 7; ++i) {
-      redActions.add(new Connect4Action(Player.PLAYER_TWO, i));            
+      redActions.add(new C4Action(Player.PLAYER_TWO, i));            
     }
 
-    blackActions = new ArrayList<Connect4Action>();
+    blackActions = new ArrayList<C4Action>();
     for (int i = 0; i < 7; ++i) {
-      blackActions.add(new Connect4Action(Player.PLAYER_TWO, i));
+      blackActions.add(new C4Action(Player.PLAYER_TWO, i));
     }
   }
   
@@ -76,10 +76,10 @@ public class Connect4State extends State<Connect4Action> {
     return new Connect4State(currentPlayer, copyBoard(board), winner);
   }
 
-  static List<Connect4Action> actionsForPlayer(Player[][] board, Player player) {
-    List<Connect4Action> actions = player == Player.PLAYER_TWO ? redActions : blackActions;
-    List<Connect4Action> result = new ArrayList<Connect4Action>();
-    for (Connect4Action action : actions) {
+  static List<C4Action> actionsForPlayer(Player[][] board, Player player) {
+    List<C4Action> actions = player == Player.PLAYER_TWO ? redActions : blackActions;
+    List<C4Action> result = new ArrayList<C4Action>();
+    for (C4Action action : actions) {
       if (board[action.getColumnNumber()][5] == null) {
         result.add(action);
       }
@@ -88,7 +88,7 @@ public class Connect4State extends State<Connect4Action> {
   }
 
   @Override
-  public Connect4State performInternal(Connect4Action action) {
+  public Connect4State performInternal(C4Action action) {
     int freeCell = 0;
     while (board[action.getColumnNumber()][freeCell] != null) {
       freeCell++;
@@ -102,7 +102,7 @@ public class Connect4State extends State<Connect4Action> {
     return nextState;
   }
 
-  public State<Connect4Action> unperform(Connect4Action action) {
+  public State<C4Action> unperform(C4Action action) {
     int freeCell = 5;
     while (board[action.getColumnNumber()][freeCell] == null) {
       freeCell--;

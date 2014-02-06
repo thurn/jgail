@@ -1,6 +1,8 @@
 package ca.thurn.uct.algorithm;
 
 import ca.thurn.uct.algorithm.State.PerformMode;
+import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.Player;
 
 
 public class NegamaxSearch<A extends Action> implements ActionPicker<A> {

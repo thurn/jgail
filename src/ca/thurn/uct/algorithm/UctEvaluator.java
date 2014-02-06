@@ -1,5 +1,8 @@
 package ca.thurn.uct.algorithm;
 
+import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.Player;
+
 public class UctEvaluator<A extends Action> implements Evaluator<A> {
   private final UctSearch<A> uctSearch;  
 

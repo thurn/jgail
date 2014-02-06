@@ -1,6 +1,6 @@
 package ca.thurn.uct.ingenious;
 
-import ca.thurn.uct.algorithm.Action;
+import ca.thurn.uct.core.Action;
 
 public class IngeniousAction implements Action {
   private final IngeniousPiece piece;

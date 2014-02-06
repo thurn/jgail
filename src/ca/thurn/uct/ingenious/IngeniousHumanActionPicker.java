@@ -3,8 +3,8 @@ package ca.thurn.uct.ingenious;
 import java.util.Scanner;
 
 import ca.thurn.uct.algorithm.ActionPicker;
-import ca.thurn.uct.algorithm.Player;
 import ca.thurn.uct.algorithm.State;
+import ca.thurn.uct.core.Player;
 
 public class IngeniousHumanActionPicker implements ActionPicker<IngeniousAction> {
 

@@ -1,9 +1,9 @@
 package ca.thurn.uct.connect4;
 
-import ca.thurn.uct.algorithm.Action;
-import ca.thurn.uct.algorithm.Player;
+import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.Player;
 
-public class Connect4Action implements Action {
+public class C4Action implements Action {
 	/**
 	 * The column in which you will drop your piece.
 	 */
@@ -14,12 +14,12 @@ public class Connect4Action implements Action {
 	 */
 	private final Player player;
 	
-	public Connect4Action(Player player, int columnNumber) {
+	public C4Action(Player player, int columnNumber) {
 		this.player = player;
 		this.columnNumber = columnNumber;
 	}
 
-  public int getColumnNumber() {
+  int getColumnNumber() {
     return columnNumber;
   }
 

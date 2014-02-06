@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Random;
 
 import ca.thurn.uct.algorithm.State.PerformMode;
+import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.Player;
 
 /**
  * 

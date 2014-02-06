@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import ca.thurn.uct.algorithm.Player;
 import ca.thurn.uct.algorithm.State;
+import ca.thurn.uct.core.Player;
 
 public class IngeniousState extends State<IngeniousAction> {
   

@@ -1,5 +1,8 @@
 package ca.thurn.uct.algorithm;
 
+import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.Player;
+
 public interface Evaluator<A extends Action> {
   
   /**

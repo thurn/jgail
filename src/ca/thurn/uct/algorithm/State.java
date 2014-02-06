@@ -3,8 +3,34 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.Player;
 
-public abstract class State<A extends Action> {
+/**
+ * API - convert to interface?
+ * 
+ * getActions()
+ * void perform(action)
+ * void undo(action)
+ * State<A> copy()
+ * void initialize(State<A> state)
+ * isTerminal()
+ * getCurrentPlayer()
+ * getWinner()
+ * playerAfter(Player)
+ * 
+ * - Action pickers should take state representation to use as an argument
+ * - A given representation is also used as the "canonical" game state
+ * - Should be able to get an empty state and initialize it from the canonical
+ *   state.
+ * - Algorithms like UCT that need to store per-node data should have a
+ *   separate data structure which supports them (which forms a tree of
+ *   actions)
+ * - Statistical significance for tournaments would be cool
+ * - Unit tests
+ * - Integration tests - encode ordering of different algorithms.
+ */
+public abstract class State<A extends Action> {  
 
   /**
    * The mode of operation for {@link State#perform(Action, PerformMode)}. A value of
@@ -14,20 +40,31 @@ public abstract class State<A extends Action> {
    */
   public static enum PerformMode {
     TRANSFER_STATE,
-    IGNORE_STATE
+    IGNORE_STATE,
+    RETURN_CACHED
   }
+  
+  public static long nextIdentifier = 0;
   
   public List<A> actions;
   public int stateVisits;
   public Map<Action, Integer> actionVisits;
   public Map<Action, Double> actionRewards;
   public Map<A, State<A>> performCache;
+  public long identifier;
+  public Map<A, Long> childIdentifiers;
 
+  
+  public static synchronized long newIdentifier() {
+    return nextIdentifier++;
+  }
+  
   public State() {
     this.stateVisits = 0;
     this.actionVisits = new HashMap<Action, Integer>();
     this.actionRewards = new HashMap<Action, Double>();
     this.performCache = new HashMap<A, State<A>>();
+    this.childIdentifiers = new HashMap<A, Long>();
   }
   
   public <K,V> V getWithDefault(Map<K, V> map, K key, V defaultValue) {
@@ -59,6 +96,7 @@ public abstract class State<A extends Action> {
     result.actionVisits = new HashMap<Action, Integer>(actionVisits);
     result.stateVisits = stateVisits;
     result.performCache = new HashMap<A, State<A>>(performCache);
+    result.childIdentifiers = new HashMap<A, Long>(childIdentifiers);
     return result;
   }
   
@@ -126,7 +164,16 @@ public abstract class State<A extends Action> {
    * PerformModes.
    */
   public State<A> perform(A action, PerformMode mode) {
-    if (mode == PerformMode.IGNORE_STATE) {
+    if (mode == PerformMode.RETURN_CACHED) {
+      Long identifier = childIdentifiers.get(action);
+      if (identifier == null) {
+        identifier = newIdentifier();
+        childIdentifiers.put(action, identifier);
+      }
+      State<A> result = performInternal(action);
+      result.identifier = identifier;
+      return result;
+    } else if (mode == PerformMode.IGNORE_STATE) {
       return performInternal(action);
     } else if (mode == PerformMode.TRANSFER_STATE) {
       State<A> result = performInternal(action);
@@ -143,6 +190,10 @@ public abstract class State<A extends Action> {
     } else {
       throw new RuntimeException("Unknown PerformMode: " + mode);
     }
+  }
+  
+  public long getIdentifier() {
+    return identifier;
   }
   
   protected abstract State<A> performInternal(A action);
