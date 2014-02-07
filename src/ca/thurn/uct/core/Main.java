@@ -13,8 +13,9 @@ import java.util.Random;
  */
 public class Main<A extends Action> {
   private final List<Agent<A>> agents;
-  private final State<A> canonicalState;
+  private final State<A> initialState;
   private final Random random = new Random();
+  private State<A> canonicalState;  
 
   /**
    * Constructs a new Main instance.
@@ -22,11 +23,13 @@ public class Main<A extends Action> {
    * @param agents A list of agents who will participate in the game(s).
    * @param canonicalState The state to use as the canonical game state. It is
    *     responsible for keeping track of actual actions in the game and is not
-   *     directly given to any agent to make their action determination.
+   *     directly given to any agent to make their action determination. It is
+   *     the responsibility of the caller to ensure that this state is in the
+   *     appropriate initial state for this game.
    */
   public Main(List<Agent<A>> agents, State<A> canonicalState) {
     this.agents = agents;
-    this.canonicalState = canonicalState;
+    this.initialState = canonicalState;
   }
   
   /**
@@ -101,16 +104,16 @@ public class Main<A extends Action> {
    *     {@link State#getWinner()} method.
    */
   private Player playGame(Map<Player, Agent<A>> agentMap, boolean isInteractive) {
-    canonicalState.setToStartingConditions();
+    canonicalState = initialState.copy();
     while (!canonicalState.isTerminal()) {
       if (isInteractive) {
         System.out.println(canonicalState);
       }
       Agent<A> agent = agentMap.get(canonicalState.getCurrentPlayer());
       A action = agent.pickAction(canonicalState.getCurrentPlayer(),
-          agent.getStateRepresentation().initialize(canonicalState));
+          agent.getStateRepresentation().initialize(canonicalState)).getAction();
       if (isInteractive) {
-        System.out.println(agent + " Picked action " + action);
+        System.out.println(agent + " picked action " + action);
       }
       canonicalState.perform(action);
     }

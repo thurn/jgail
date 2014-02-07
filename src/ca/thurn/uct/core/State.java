@@ -40,9 +40,10 @@ public interface State<A extends Action> {
   
   /**
    * Put this state in the starting condition for the game, the state before
-   * any actions have been taken. 
+   * any actions have been taken.
+   * @return this 
    */
-  public void setToStartingConditions();
+  public State<A> setToStartingConditions();
   
   /**
    * @return A complete copy of this state.

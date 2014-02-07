@@ -2,17 +2,19 @@ package ca.thurn.uct.ingenious;
 
 import ca.thurn.uct.core.Action;
 
+/**
+ * An Action in the game Ingenious.
+ */
 public class IngeniousAction implements Action {
   private final IngeniousPiece piece;
 
-  // Hex #1 x and y
+  // Hex #1
   private final int x1;
   private final int y1;
-  
-  // Hex #2 x and y
+
+  // Hex #2
   private final int x2;
   private final int y2;
-
   
   public IngeniousAction(IngeniousPiece piece, int x1, int y1, int x2, int y2) {
     this.piece = piece;

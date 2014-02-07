@@ -2,15 +2,29 @@ package ca.thurn.uct.ingenious;
 
 import java.util.Scanner;
 
-import ca.thurn.uct.algorithm.State;
+import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Player;
+import ca.thurn.uct.core.State;
 
-public class IngeniousHumanActionPicker implements Agent<IngeniousAction> {
+/**
+ * Human agent for Ingenious.
+ */
+public class IngeniousHumanAgent implements Agent<IngeniousAction> {
 
   private Scanner in = new Scanner(System.in);  
   
-  public IngeniousAction pickAction(Player player, State<IngeniousAction> rootNode) {
+  private final State<IngeniousAction> stateRepresentation;
+  
+  /**
+   * @param stateRepresentation A state representation which will be totally
+   *     ignored.
+   */
+  public IngeniousHumanAgent(State<IngeniousAction> stateRepresentation) {
+    this.stateRepresentation = stateRepresentation;
+  }
+  
+  public ActionScore<IngeniousAction> pickAction(Player player, State<IngeniousAction> rootNode) {
     IngeniousState state = (IngeniousState)rootNode;
     IngeniousPiece piece = null;
     int index, x1, y1, x2, y2;
@@ -36,19 +50,12 @@ public class IngeniousHumanActionPicker implements Agent<IngeniousAction> {
       }
       System.out.println("Invalid action selection!");      
     }
-    return new IngeniousAction(piece, x1, y1, x2, y2);
+    return new ActionScore<IngeniousAction>(new IngeniousAction(piece, x1, y1, x2, y2));
   }
 
   @Override
-  public IngeniousAction pickAction(Player player, ca.thurn.uct.core.State<IngeniousAction> rootNode) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public ca.thurn.uct.core.State<IngeniousAction> getStateRepresentation() {
-    // TODO Auto-generated method stub
-    return null;
+  public State<IngeniousAction> getStateRepresentation() {
+    return stateRepresentation;
   }
 
 

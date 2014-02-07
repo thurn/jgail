@@ -2,8 +2,9 @@ package ca.thurn.uct.ingenious;
 
 import java.util.Random;
 
-import ca.thurn.uct.algorithm.Output;
-
+/**
+ * A specific colored hex on the board of Ingenious.
+ */
 public enum IngeniousHex {
   ORANGE,
   YELLOW,
@@ -33,46 +34,23 @@ public enum IngeniousHex {
   }
   
   public String toString() {
-    if (Output.getInstance().isColor()) {
-      switch(this) {
-        case BLUE:
-          return ANSI_BLUE + "BB" + ANSI_RESET;
-        case GREEN:
-          return ANSI_GREEN + "GG" + ANSI_RESET;
-        case ORANGE:
-          return ANSI_CYAN + "OO" + ANSI_RESET;
-        case PURPLE:
-          return ANSI_PURPLE + "PP" + ANSI_RESET;
-        case RED:
-          return ANSI_RED + "RR" + ANSI_RESET;
-        case YELLOW:
-          return ANSI_YELLOW + "YY" + ANSI_RESET;
-        case OFF_BOARD:
-          return "";
-        default:
-          throw new RuntimeException();
-      }       
-    } else {
-      switch(this) {
-        case BLUE:
-          return "BB";
-        case GREEN:
-          return "GG";
-        case ORANGE:
-          return "OO";
-        case PURPLE:
-          return "PP";
-        case RED:
-          return "RR";
-        case YELLOW:
-          return "YY";
-        case OFF_BOARD:
-          return "";
-        default:
-          throw new RuntimeException();
-      }      
-    }
+    switch(this) {
+      case BLUE:
+        return ANSI_BLUE + "BB" + ANSI_RESET;
+      case GREEN:
+        return ANSI_GREEN + "GG" + ANSI_RESET;
+      case ORANGE:
+        return ANSI_CYAN + "OO" + ANSI_RESET;
+      case PURPLE:
+        return ANSI_PURPLE + "PP" + ANSI_RESET;
+      case RED:
+        return ANSI_RED + "RR" + ANSI_RESET;
+      case YELLOW:
+        return ANSI_YELLOW + "YY" + ANSI_RESET;
+      case OFF_BOARD:
+        return "";
+      default:
+        throw new RuntimeException();
+    }       
   }
-  
-
 }

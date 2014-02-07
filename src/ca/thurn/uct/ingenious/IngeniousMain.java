@@ -1,23 +1,22 @@
 package ca.thurn.uct.ingenious;
 
-import ca.thurn.uct.algorithm.InitialStateGenerator;
-import ca.thurn.uct.algorithm.Main;
-import ca.thurn.uct.algorithm.Output;
-import ca.thurn.uct.algorithm.Main.RunMode;
-import ca.thurn.uct.algorithm.State;
+import java.util.ArrayList;
+import java.util.List;
+
+import ca.thurn.uct.algorithm.NegamaxSearch;
+import ca.thurn.uct.core.Agent;
+import ca.thurn.uct.core.Main;
+
 
 public class IngeniousMain {
   public static void main(String[] args) {
-//    if (args.length == 1 && args[0].equals("--color")) {
-//      Output.getInstance().setIsColor(true);
-//    }
-//    Main<IngeniousAction> main = new Main<IngeniousAction>(RunMode.HUMAN_VS_HUMAN,
-//        new InitialStateGenerator<IngeniousAction>() {
-//      @Override
-//      public State<IngeniousAction> initialState() {
-//        return new IngeniousState();
-//      }
-//    }, new IngeniousHumanActionPicker());
-//    main.main();
+    List<Agent<IngeniousAction>> agents = new ArrayList<Agent<IngeniousAction>>();
+    agents.add(new IngeniousHumanAgent(new IngeniousState()));
+//    agents.add(MonteCarloSearch.builder(new IngeniousState()).build());
+//    agents.add(UctSearch.builder(new IngeniousState()).build());
+    agents.add(NegamaxSearch.builder(new IngeniousState()).build());
+    Main<IngeniousAction> main = new Main<IngeniousAction>(agents,
+        new IngeniousState().setToStartingConditions());
+    main.runMatch();
   }
 }
