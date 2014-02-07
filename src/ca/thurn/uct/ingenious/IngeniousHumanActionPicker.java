@@ -2,15 +2,14 @@ package ca.thurn.uct.ingenious;
 
 import java.util.Scanner;
 
-import ca.thurn.uct.algorithm.ActionPicker;
 import ca.thurn.uct.algorithm.State;
+import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Player;
 
-public class IngeniousHumanActionPicker implements ActionPicker<IngeniousAction> {
+public class IngeniousHumanActionPicker implements Agent<IngeniousAction> {
 
   private Scanner in = new Scanner(System.in);  
   
-  @Override
   public IngeniousAction pickAction(Player player, State<IngeniousAction> rootNode) {
     IngeniousState state = (IngeniousState)rootNode;
     IngeniousPiece piece = null;
@@ -39,5 +38,18 @@ public class IngeniousHumanActionPicker implements ActionPicker<IngeniousAction>
     }
     return new IngeniousAction(piece, x1, y1, x2, y2);
   }
+
+  @Override
+  public IngeniousAction pickAction(Player player, ca.thurn.uct.core.State<IngeniousAction> rootNode) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public ca.thurn.uct.core.State<IngeniousAction> getStateRepresentation() {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
 
 }

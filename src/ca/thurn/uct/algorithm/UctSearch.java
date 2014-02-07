@@ -4,9 +4,10 @@ import java.util.Random;
 
 import ca.thurn.uct.algorithm.State.PerformMode;
 import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Player;
 
-public class UctSearch<A extends Action> implements ActionPicker<A> {
+public class UctSearch<A extends Action> implements Agent<A> {
   
   public static class Builder<A extends Action> {
     private int numSimulations = 100000;
@@ -202,5 +203,17 @@ public class UctSearch<A extends Action> implements ActionPicker<A> {
     builder.append(maxDepth);
     builder.append("]");
     return builder.toString();
+  }
+
+  @Override
+  public A pickAction(Player player, ca.thurn.uct.core.State<A> rootNode) {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public ca.thurn.uct.core.State<A> getStateRepresentation() {
+    // TODO Auto-generated method stub
+    return null;
   }
 }

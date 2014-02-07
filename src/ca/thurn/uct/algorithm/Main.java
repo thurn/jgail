@@ -9,6 +9,7 @@ import java.util.Random;
 
 import ca.thurn.uct.algorithm.State.PerformMode;
 import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Player;
 
 /**
@@ -32,11 +33,11 @@ public class Main<A extends Action> {
   private Random random = new Random();
   private long startTime;
   private final InitialStateGenerator<A> initialStateGenerator;
-  private final List<ActionPicker<A>> actionPickers;
-  private final Map<ActionPicker<A>, StateInitializer<A>> initializers;
+  private final List<Agent<A>> actionPickers;
+  private final Map<Agent<A>, StateInitializer<A>> initializers;
   
   private Main(int tournamentSize, InitialStateGenerator<A> initialStateGenerator,
-      List<ActionPicker<A>> actionPickers, Map<ActionPicker<A>, StateInitializer<A>> initializers,
+      List<Agent<A>> actionPickers, Map<Agent<A>, StateInitializer<A>> initializers,
       RunMode runMode) {
     this.tournamentSize = tournamentSize;
     this.initialStateGenerator = initialStateGenerator;
@@ -48,14 +49,14 @@ public class Main<A extends Action> {
   private final RunMode runMode;
 
   public Main(int tournamentSize, InitialStateGenerator<A> initialStateGenerator,
-      List<ActionPicker<A>> actionPickers,
-      Map<ActionPicker<A>, StateInitializer<A>> initializers) {
+      List<Agent<A>> actionPickers,
+      Map<Agent<A>, StateInitializer<A>> initializers) {
     this(tournamentSize, initialStateGenerator, actionPickers, initializers, RunMode.TOURNAMENT);
   }
   
   public Main(InitialStateGenerator<A> initialStateGenerator,
-      List<ActionPicker<A>> actionPickers,
-      Map<ActionPicker<A>, StateInitializer<A>> initializers) {
+      List<Agent<A>> actionPickers,
+      Map<Agent<A>, StateInitializer<A>> initializers) {
     this(0, initialStateGenerator, actionPickers, initializers, RunMode.VERSUS);
   }
 
@@ -63,8 +64,8 @@ public class Main<A extends Action> {
     switch(runMode) {
       case VERSUS:
         Output.getInstance().setIsInteractive(true);
-        Map<Player, ActionPicker<A>> pickerMap =
-            new HashMap<Player, ActionPicker<A>>();
+        Map<Player, Agent<A>> pickerMap =
+            new HashMap<Player, Agent<A>>();
         pickerMap.put(Player.PLAYER_ONE, actionPickers.get(0));
         pickerMap.put(Player.PLAYER_TWO, actionPickers.get(1));
         playGame(pickerMap, initializers);
@@ -76,14 +77,14 @@ public class Main<A extends Action> {
   }
   
   private void runTournament(
-      Map<ActionPicker<A>, StateInitializer<A>> initializers) {
+      Map<Agent<A>, StateInitializer<A>> initializers) {
     startTime = System.currentTimeMillis();
     int[] wins = new int[actionPickers.size()];
     int draws = 0;
 
     for (int i = 0; i < tournamentSize; ++i) {
-      Map<Player, ActionPicker<A>> pickerMap =
-          new HashMap<Player, ActionPicker<A>>();
+      Map<Player, Agent<A>> pickerMap =
+          new HashMap<Player, Agent<A>>();
       int black = random.nextInt(actionPickers.size());
       int red = random.nextInt(actionPickers.size());
       while (red == black) {
@@ -124,16 +125,15 @@ public class Main<A extends Action> {
     System.out.println(draws + " draws");
   }
 
-  private Player playGame(Map<Player, ActionPicker<A>> pickerMap,
-      Map<ActionPicker<A>, StateInitializer<A>> initializers) {
+  private Player playGame(Map<Player, Agent<A>> pickerMap,
+      Map<Agent<A>, StateInitializer<A>> initializers) {
     gameState = initialStateGenerator.initialState();
     while (!gameState.isTerminal()) {
       if (Output.getInstance().isInteractive()) System.out.println(gameState);
-      ActionPicker<A> actionPicker = pickerMap.get(gameState.getCurrentPlayer());
+      Agent<A> actionPicker = pickerMap.get(gameState.getCurrentPlayer());
       StateInitializer<A> initializer = initializers.get(actionPicker);
       A action =
-          actionPicker.pickAction(gameState.getCurrentPlayer(),
-              initializer.initializeFromState(gameState.copy()));
+          actionPicker.pickAction(null, null);
       if (Output.getInstance().isInteractive()) {
         System.out.println(actionPicker + " Picked action " + action);
       }

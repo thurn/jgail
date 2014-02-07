@@ -1,5 +1,7 @@
 package ca.thurn.uct.core;
 
+import java.util.List;
+
 /**
  * Represents any given state of a given game. A state is responsible for
  * tracking whose turn it is, what actions have been taken, and if anybody has
@@ -16,7 +18,7 @@ public interface State<A extends Action> {
   /**
    * @return All of the actions which are currently possible from this state.
    */
-  public Iterable<A> getActions();
+  public List<A> getActions();
   
   /**
    * Performs the provided action by mutating the state. You should assume that
@@ -56,8 +58,9 @@ public interface State<A extends Action> {
    * initialization from the game's canonical state.
    * 
    * @param state The state to initialize this state from.
+   * @return this.
    */
-  public void initialize(State<A> state);
+  public State<A> initialize(State<A> state);
   
   /**
    * @return True if there are no more actions possible from this state (the
