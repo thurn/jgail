@@ -111,7 +111,7 @@ public class Main<A extends Action> {
       }
       Agent<A> agent = agentMap.get(canonicalState.getCurrentPlayer());
       A action = agent.pickAction(canonicalState.getCurrentPlayer(),
-          agent.getStateRepresentation().initialize(canonicalState));
+          agent.getStateRepresentation().initialize(canonicalState)).getAction();
       if (isInteractive) {
         System.out.println(agent + " picked action " + action);
       }

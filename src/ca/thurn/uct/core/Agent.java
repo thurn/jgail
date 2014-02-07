@@ -15,9 +15,12 @@ public interface Agent<A extends Action> {
    * @param rootNode The current state of the game, using the state
    *     representation this agent returned from
    *     {@link Agent#getStateRepresentation()}.
-   * @return The action this player should take in the current game state.
+   * @return An ActionScore pair consisting of the action this player should
+   *     take in the current game state and an optional corresponding heuristic
+   *     score for this action, where a higher number indicates a better action
+   *     for the player.
    */
-  public A pickAction(Player player, State<A> rootNode);
+  public ActionScore<A> pickAction(Player player, State<A> rootNode);
   
   /**
    * @return A null-initialized state object

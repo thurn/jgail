@@ -66,8 +66,8 @@ public class UctSearch<A extends Action> implements Agent<A> {
     }
 
     /**
-     * Number of simulations to run before picking the best action from the
-     * root node. Default value: 100000.
+     * @param numSimluations Number of simulations to run before picking the
+     *     best action from the root node. Default value: 100000.
      * @return this.
      */
     public Builder<A> setNumSimulations(int numSimulations) {
@@ -76,9 +76,9 @@ public class UctSearch<A extends Action> implements Agent<A> {
     }
 
     /**
-     * The multiplier named C_p in the original UCT paper. A higher number
-     * places more emphasis on exploration, a lower number places more emphasis
-     * on exploitation. Default value: 2.0.
+     * @param explorationBias The multiplier named C_p in the original UCT
+     *     paper. A higher number places more emphasis on exploration, a lower
+     *     number places more emphasis on exploitation. Default value: 2.0.
      * @return this.
      */
     public Builder<A> setExplorationBias(double explorationBias) {
@@ -87,11 +87,11 @@ public class UctSearch<A extends Action> implements Agent<A> {
     }
 
     /**
-     * The rate at which rewards should be discounted in the future, used to
-     * compute the present value of future rewards. This way, rewards further
-     * in the future are worth less. This captures our uncertainty about the
-     * future, as well as helping avoid infinite reward cycles, etc.
-     * Default value: 1.0.
+     * @param discountRate The rate at which rewards should be discounted in
+     *     the future, used to compute the present value of future rewards.
+     *     This way, rewards further in the future are worth less. This
+     *     captures our uncertainty about the future, as well as helping avoid
+     *     infinite reward cycles, etc. Default value: 1.0 (no discounting).
      * @return this.
      */
     public Builder<A> setDiscountRate(double discountRate) {
@@ -100,7 +100,8 @@ public class UctSearch<A extends Action> implements Agent<A> {
     }
 
     /**
-     * The maximum depth the search to in the simulation. Default value: 50.
+     * @param maxDepth The maximum depth the search to in the simulation.
+     *     Default value: 50.
      * @return this.
      */
     public Builder<A> setMaxDepth(int maxDepth) {
@@ -109,9 +110,9 @@ public class UctSearch<A extends Action> implements Agent<A> {
     }
 
     /**
-     * Function to use to evaluate the heuristic value of a terminal search
-     * node. Default value returns 0 for losses, 1 for wins, and 0 for all
-     * other states.
+     * @param evaluator Function to use to evaluate the heuristic value of a
+     *     terminal search node. Default value returns -1 for losses, 1 for
+     *     wins, and 0 for all other states.
      * @return this.
      */
     public Builder<A> setEvaluator(Evaluator<A> evaluator) {
@@ -174,14 +175,10 @@ public class UctSearch<A extends Action> implements Agent<A> {
   }
 
   /**
-   * Identifies the best action to take.
-   *
-   * @param player The player to pick an action for.
-   * @param root The current game state.
-   * @return An ActionScore containing the suggested action along with a
-   *     heuristic score indicating how good the action is.
+   * {@inheritDoc} 
    */
-  ActionScore<A> getBestAction(Player player, State<A> root) {
+  @Override
+  public ActionScore<A> pickAction(Player player, State<A> root) {
     ActionTree<A, ActionData> actionTree = new ActionTree<A, ActionData>(new ActionData());
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(actionTree, player, root.copy(), 0);
@@ -198,15 +195,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
     }
     return new ActionScore<A>(bestPayoff, bestAction);
   }
-  
-  /**
-   * {@inheritDoc} 
-   */
-  @Override
-  public A pickAction(Player player, State<A> root) {
-    return getBestAction(player, root).getAction();
-  }
-  
+
   /**
    * {@inheritDoc}
    */

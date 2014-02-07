@@ -10,6 +10,15 @@ public class ActionScore<A extends Action> {
   private final A action;
   
   /**
+   * An ActionScore with a score of 0.
+   * 
+   * @param action The action.
+   */
+  public ActionScore(A action) {
+    this(0.0, action);
+  }
+  
+  /**
    * @param score The score.
    * @param action The action.
    */

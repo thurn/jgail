@@ -3,6 +3,7 @@ package ca.thurn.uct.ingenious;
 import java.util.Scanner;
 
 import ca.thurn.uct.algorithm.State;
+import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Player;
 
@@ -40,7 +41,7 @@ public class IngeniousHumanActionPicker implements Agent<IngeniousAction> {
   }
 
   @Override
-  public IngeniousAction pickAction(Player player, ca.thurn.uct.core.State<IngeniousAction> rootNode) {
+  public ActionScore<IngeniousAction> pickAction(Player player, ca.thurn.uct.core.State<IngeniousAction> rootNode) {
     // TODO Auto-generated method stub
     return null;
   }

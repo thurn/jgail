@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Random;
 
 import ca.thurn.uct.core.Action;
+import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Evaluator;
 import ca.thurn.uct.core.Player;
@@ -49,8 +50,8 @@ public class MonteCarloSearch<A extends Action> implements Agent<A> {
     }
 
     /**
-     * Number of simulations to run before picking the best action from the
-     * root node. Default value: 100000.
+     * @param numSimulations Number of simulations to run before picking the
+     *     best action from the root node. Default value: 100000.
      * @return this.
      */
     public Builder<A> setNumSimulations(int numSimulations) {
@@ -59,7 +60,8 @@ public class MonteCarloSearch<A extends Action> implements Agent<A> {
     }
 
     /**
-     * The maximum depth the search to in the simulation. Default value: 50.
+     * @param maxDepth The maximum depth the search to in the simulation.
+     *     Default value: 50.
      * @return this.
      */
     public Builder<A> setMaxDepth(int maxDepth) {
@@ -68,9 +70,9 @@ public class MonteCarloSearch<A extends Action> implements Agent<A> {
     }
 
     /**
-     * Function to use to evaluate the heuristic value of a terminal search
-     * node. Default value returns -1 for losses, 1 for wins, and 0 for all
-     * other states.
+     * @param evaluator Function to use to evaluate the heuristic value of a
+     *     terminal search node. Default value returns -1 for losses, 1 for
+     *     wins, and 0 for all other states.
      * @return this.
      */
     public Builder<A> setEvaluator(Evaluator<A> evaluator) {
@@ -122,7 +124,7 @@ public class MonteCarloSearch<A extends Action> implements Agent<A> {
    * {@inheritDoc}
    */
   @Override
-  public A pickAction(Player player, State<A> root) {
+  public ActionScore<A> pickAction(Player player, State<A> root) {
     actionRewards = new HashMap<A, Double>(); 
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(player, root.copy(), 0);
@@ -135,7 +137,7 @@ public class MonteCarloSearch<A extends Action> implements Agent<A> {
         bestAction = entry.getKey();
       }
     }
-    return bestAction;
+    return new ActionScore<A>(bestReward, bestAction);
   }
   
   @Override
