@@ -40,7 +40,7 @@ public class NegamaxSearch<A extends Action> implements Agent<A> {
      * @return A new NegamaxSearch agent based on this builder.
      */
     public NegamaxSearch<A> build() {
-      return new NegamaxSearch<>(stateRepresentation, searchDepth, evaluator);
+      return new NegamaxSearch<A>(stateRepresentation, searchDepth, evaluator);
     }
     
     /**
@@ -88,8 +88,12 @@ public class NegamaxSearch<A extends Action> implements Agent<A> {
    */
   @Override
   public ActionScore<A> pickAction(Player player, State<A> rootNode) {
-    return search(player, rootNode, searchDepth, Double.NEGATIVE_INFINITY,
+    ActionScore<A> result = search(player, rootNode, searchDepth, Double.NEGATIVE_INFINITY,
         Double.POSITIVE_INFINITY);
+    if (result.getAction() == null) {
+      throw new RuntimeException();
+    }
+    return result;
   }
 
   /**
@@ -100,11 +104,10 @@ public class NegamaxSearch<A extends Action> implements Agent<A> {
     return stateRepresentation;
   }
   
-  public ActionScore<A> search(Player player, State<A> state, int maxDepth, double alpha,
+  private ActionScore<A> search(Player player, State<A> state, int maxDepth, double alpha,
       double beta) {
     if (state.isTerminal() || maxDepth == 0) {
-      ActionScore<A> as = new ActionScore<A>(evaluator.evaluate(player, state.copy()), null);
-      return as;
+      return new ActionScore<A>(evaluator.evaluate(player, state.copy()), null);
     }
     double bestValue = Double.NEGATIVE_INFINITY;
     A bestAction = null;
@@ -120,11 +123,20 @@ public class NegamaxSearch<A extends Action> implements Agent<A> {
       if (value > alpha) {
         alpha = value;
       }
-      if (alpha >= beta) {
+      if (alpha >= beta) {        
         break;
       }
     }
     return new ActionScore<A>(bestValue, bestAction);
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder builder2 = new StringBuilder();
+    builder2.append("NegamaxSearch [searchDepth=");
+    builder2.append(searchDepth);
+    builder2.append("]");
+    return builder2.toString();
   }
 
 }

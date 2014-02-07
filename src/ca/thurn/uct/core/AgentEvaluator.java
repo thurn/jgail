@@ -15,7 +15,11 @@ public class AgentEvaluator<A extends Action> implements Evaluator<A> {
   
   @Override
   public double evaluate(Player player, State<A> state) {
-    return agent.pickAction(player, state).getScore();
+    if (state.isTerminal()) {
+      return state.getWinner() == player ? 1.0 : -1.0;
+    } else {
+      return agent.pickAction(player, state).getScore();
+    }
   }
 
 }
