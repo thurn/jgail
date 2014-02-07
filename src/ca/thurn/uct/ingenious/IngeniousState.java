@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import ca.thurn.uct.core.State;
 import ca.thurn.uct.core.Player;
+import ca.thurn.uct.core.State;
 import ca.thurn.uct.core.Util;
 
 /**
@@ -17,7 +17,6 @@ public class IngeniousState implements State<IngeniousAction> {
   
   private static final int BOARD_SIZE = 11;
   private static final int HAND_SIZE = 6;
-  private static final int STARTING_FREE_HEXES = 91;
   
   private static enum Direction {
     NE, E, SE, SW, W, NW
@@ -28,7 +27,6 @@ public class IngeniousState implements State<IngeniousAction> {
   private IngeniousHex[][] board;
   private Player currentPlayer;
   private Map<Player, List<IngeniousPiece>> hands;
-  private int emptyHexesRemaining;
   private Map<Player, Map<IngeniousHex, Integer>> scores;
   
   /**
@@ -38,13 +36,12 @@ public class IngeniousState implements State<IngeniousAction> {
   }
 
   private IngeniousState(List<IngeniousAction> actions, IngeniousHex[][] board,
-      Player currentPlayer, Map<Player, List<IngeniousPiece>> hands, int emptyHexesRemaining,
+      Player currentPlayer, Map<Player, List<IngeniousPiece>> hands,
       Map<Player, Map<IngeniousHex, Integer>> scores) {
     this.actions = actions;
     this.board = board;
     this.currentPlayer = currentPlayer;
     this.hands = hands;
-    this.emptyHexesRemaining = emptyHexesRemaining;
     this.scores = scores;
   }
 
@@ -83,7 +80,6 @@ public class IngeniousState implements State<IngeniousAction> {
     hand.remove(action.getPiece());
     hand.add(randomPiece());
 
-    emptyHexesRemaining -= 2;
     currentPlayer = playerAfter(currentPlayer);
     actions = allActions(hands.get(currentPlayer));
   }
@@ -108,7 +104,6 @@ public class IngeniousState implements State<IngeniousAction> {
     List<IngeniousPiece> currentHand = randomHand();
     this.hands.put(Player.PLAYER_ONE, currentHand);
     this.hands.put(Player.PLAYER_TWO, randomHand());
-    this.emptyHexesRemaining = STARTING_FREE_HEXES;
     this.scores = new HashMap<Player, Map<IngeniousHex, Integer>>();
     this.scores.put(Player.PLAYER_ONE, new HashMap<IngeniousHex, Integer>());
     this.scores.put(Player.PLAYER_TWO, new HashMap<IngeniousHex, Integer>());
@@ -131,7 +126,7 @@ public class IngeniousState implements State<IngeniousAction> {
       newScores.put(entry.getKey(), new HashMap<IngeniousHex, Integer>(entry.getValue()));
     }
     return new IngeniousState(new ArrayList<IngeniousAction>(actions), copyBoard(),
-        currentPlayer, newHands, emptyHexesRemaining, newScores);
+        currentPlayer, newHands, newScores);
   }
 
   /**
@@ -144,7 +139,6 @@ public class IngeniousState implements State<IngeniousAction> {
     this.board = copy.board;
     this.currentPlayer = copy.currentPlayer;
     this.hands = copy.hands;
-    this.emptyHexesRemaining = copy.emptyHexesRemaining;
     this.scores = copy.scores;
     return this;
   }
@@ -171,7 +165,7 @@ public class IngeniousState implements State<IngeniousAction> {
    */
   @Override
   public boolean isTerminal() {
-    return emptyHexesRemaining == 0;
+    return actions.size() == 0;
   }
 
   /**
@@ -518,7 +512,7 @@ public class IngeniousState implements State<IngeniousAction> {
   }
 
   /**
-   * Adds the current player's hand to the provided StringBuilder.
+   * Adds the current player's hand to the provided StringBuilder.  
    *
    * @param result The StringBuilder.
    */

@@ -35,7 +35,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
     
     private int numSimulations = 100000;
   
-    private double explorationBias = 2.0;
+    private double explorationBias = UNIT_EXPLORATION_BIAS;
 
     private double discountRate = 1.0;
     
@@ -67,7 +67,8 @@ public class UctSearch<A extends Action> implements Agent<A> {
 
     /**
      * @param numSimluations Number of simulations to run before picking the
-     *     best action from the root node. Default value: 100000.
+     *     best action from the root node. Default value:
+     *     {@link UctSearch#UNIT_EXPLORATION_BIAS}
      * @return this.
      */
     public Builder<A> setNumSimulations(int numSimulations) {
