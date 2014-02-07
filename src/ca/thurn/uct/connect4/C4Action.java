@@ -3,6 +3,9 @@ package ca.thurn.uct.connect4;
 import ca.thurn.uct.core.Action;
 import ca.thurn.uct.core.Player;
 
+/**
+ * An Action in a game of Connect 4
+ */
 public class C4Action implements Action {
 	/**
 	 * The column in which you will drop your piece.

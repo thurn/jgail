@@ -1,5 +1,8 @@
 package ca.thurn.uct.ingenious;
 
+/**
+ * A piece in Ingenious, consisting of two colored hexes.
+ */
 public class IngeniousPiece {
   private final IngeniousHex hex1;
   private final IngeniousHex hex2;
