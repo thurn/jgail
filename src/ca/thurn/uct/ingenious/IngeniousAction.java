@@ -7,6 +7,14 @@ import ca.thurn.uct.core.Action;
  */
 public class IngeniousAction implements Action {
   private final IngeniousPiece piece;
+  
+  // AAAA ABBB BBCC CCCD DDDD EEEE FFFF 0000
+  // AAAAA -> x1
+  // BBBBB -> y1
+  // CCCCC -> x2
+  // DDDDD -> y2
+  // EEEE -> Piece hex 1
+  // FFFF -> Piece hex 2
 
   // Hex #1
   private final int x1;
