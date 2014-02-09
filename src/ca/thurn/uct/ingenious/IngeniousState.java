@@ -2,6 +2,7 @@ package ca.thurn.uct.ingenious;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,15 +99,23 @@ public class IngeniousState implements State<IngeniousAction> {
   @Override
   public State<IngeniousAction> setToStartingConditions() {
     this.board = new IngeniousHex[BOARD_SIZE][BOARD_SIZE];
-    addOffBoardHexes(board);
+    addInitialHexes(board);
     this.currentPlayer = Player.PLAYER_ONE;
     this.hands = new HashMap<Player, List<IngeniousPiece>>();
     List<IngeniousPiece> currentHand = randomHand();
     this.hands.put(Player.PLAYER_ONE, currentHand);
     this.hands.put(Player.PLAYER_TWO, randomHand());
+    HashMap<IngeniousHex, Integer> p1 = new HashMap<IngeniousHex, Integer>();
+    for (IngeniousHex hex : IngeniousHex.allColors()) {
+      p1.put(hex, 0);
+    }
+    HashMap<IngeniousHex, Integer> p2 = new HashMap<IngeniousHex, Integer>();
+    for (IngeniousHex hex : IngeniousHex.allColors()) {
+      p2.put(hex, 0);
+    }    
     this.scores = new HashMap<Player, Map<IngeniousHex, Integer>>();
-    this.scores.put(Player.PLAYER_ONE, new HashMap<IngeniousHex, Integer>());
-    this.scores.put(Player.PLAYER_TWO, new HashMap<IngeniousHex, Integer>());
+    this.scores.put(Player.PLAYER_ONE, p1);
+    this.scores.put(Player.PLAYER_TWO, p2);
     actions = allActions(currentHand);
     return this;
   }
@@ -181,23 +190,20 @@ public class IngeniousState implements State<IngeniousAction> {
    */
   @Override
   public Player getWinner() {
-    // TODO: handle tiebreakers
-    Player winner = null;
-    int bestScore = -1;
-    for (Player player : scores.keySet()) {
-      int total = Integer.MAX_VALUE;
-      Map<IngeniousHex, Integer> map = scores.get(player);
-      for (IngeniousHex hex : IngeniousHex.allColors()) {
-       int score = Util.getWithDefault(map, hex, 0);
-       if (score < total) {
-         total = score;
-       }
-      }
-      if (total > bestScore) {
-        winner = player;
+    ArrayList<Integer> p1 = new ArrayList<Integer>(scores.get(Player.PLAYER_ONE).values());
+    Collections.sort(p1);
+    ArrayList<Integer> p2 = new ArrayList<Integer>(scores.get(Player.PLAYER_TWO).values());
+    Collections.sort(p2);
+    
+    for (int i = 0; i < 6; ++i) {
+      if (p1.get(i) > p2.get(i)) {
+        return Player.PLAYER_ONE;
+      } else if (p2.get(i) > p1.get(i)) {
+        return Player.PLAYER_TWO;
       }
     }
-    return winner;
+    
+    return null;
   }
   
   /**
@@ -302,11 +308,11 @@ public class IngeniousState implements State<IngeniousAction> {
   /**
    * Add OFF_BOARD dummy hexes to the parts of the board that are off-limits.
    * This is necessary because you can't store a hexagonal board in a square
-   * array.
+   * array. Also add the starting colored hexes.
    *
    * @param board The board.
    */
-  private void addOffBoardHexes(IngeniousHex[][] board) {
+  private void addInitialHexes(IngeniousHex[][] board) {
     board[0][0] = IngeniousHex.OFF_BOARD;
     board[0][1] = IngeniousHex.OFF_BOARD;
     board[0][2] = IngeniousHex.OFF_BOARD;
@@ -337,7 +343,14 @@ public class IngeniousState implements State<IngeniousAction> {
     board[8][10] = IngeniousHex.OFF_BOARD;
     board[7][9] = IngeniousHex.OFF_BOARD;
     board[7][10] = IngeniousHex.OFF_BOARD;
-    board[6][10] = IngeniousHex.OFF_BOARD;       
+    board[6][10] = IngeniousHex.OFF_BOARD;
+    
+    board[0][10] = IngeniousHex.BLUE;
+    board[5][10] = IngeniousHex.GREEN;
+    board[10][5] = IngeniousHex.ORANGE;
+    board[10][0] = IngeniousHex.PURPLE;
+    board[5][0] = IngeniousHex.RED;
+    board[0][5] = IngeniousHex.YELLOW;
   }
   
   /**

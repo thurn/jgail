@@ -87,7 +87,7 @@ public class Main<A extends Action> {
     agentMap.put(Player.PLAYER_TWO, agents.get(1));
     Player winner = playGame(agentMap, true /* isInteractive */);
     if (winner != null) {
-      System.out.println(winner + " wins!");
+      System.out.println(agentMap.get(winner) + " wins!");
     } else {
       System.out.println("Game drawn.");
     }

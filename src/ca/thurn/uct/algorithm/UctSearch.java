@@ -41,6 +41,8 @@ public class UctSearch<A extends Action> implements Agent<A> {
     
     private int maxDepth = 50;
     
+    private int numInitialVisits = 0;
+    
     private Evaluator<A> evaluator = new Evaluator<A>() {
       @Override
       public double evaluate(Player player, State<A> state) {
@@ -62,13 +64,12 @@ public class UctSearch<A extends Action> implements Agent<A> {
      */
     public UctSearch<A> build() {
       return new UctSearch<A>(stateRepresentation, numSimulations, explorationBias,
-          discountRate, maxDepth, evaluator);
+          discountRate, maxDepth, numInitialVisits, evaluator);
     }
 
     /**
      * @param numSimluations Number of simulations to run before picking the
-     *     best action from the root node. Default value:
-     *     {@link UctSearch#UNIT_EXPLORATION_BIAS}
+     *     best action from the root node. Default value: 100000.
      * @return this.
      */
     public Builder<A> setNumSimulations(int numSimulations) {
@@ -79,7 +80,8 @@ public class UctSearch<A extends Action> implements Agent<A> {
     /**
      * @param explorationBias The multiplier named C_p in the original UCT
      *     paper. A higher number places more emphasis on exploration, a lower
-     *     number places more emphasis on exploitation. Default value: 2.0.
+     *     number places more emphasis on exploitation. Default value:
+     *     {@link UctSearch#UNIT_EXPLORATION_BIAS}.
      * @return this.
      */
     public Builder<A> setExplorationBias(double explorationBias) {
@@ -107,6 +109,17 @@ public class UctSearch<A extends Action> implements Agent<A> {
      */
     public Builder<A> setMaxDepth(int maxDepth) {
       this.maxDepth = maxDepth;
+      return this;
+    }
+    
+    /**
+     * @param numInitialVisits For the first numInitialVisits to a given game
+     *     tree position, play random games instead of expanding the tree. This
+     *     saves memory. Default value: 0.
+     * @return this.
+     */
+    public Builder<A> setNumInitialVisits(int numInitialVisits) {
+      this.numInitialVisits = numInitialVisits;
       return this;
     }
 
@@ -162,17 +175,19 @@ public class UctSearch<A extends Action> implements Agent<A> {
   private final double explorationBias;
   private final double discountRate;
   private final int maxDepth;
+  private final int numInitialVisits;
   private final Evaluator<A> evaluator;  
   private final Random random = new Random();
   
   private UctSearch(State<A> stateRepresentation, int numSimulations, double explorationBias,
-      double discountRate, int maxDepth, Evaluator<A> evaluator) {
+      double discountRate, int maxDepth, int numInitialVisits, Evaluator<A> evaluator) {
     this.stateRepresentation = stateRepresentation;
     this.numSimulations = numSimulations;
     this.explorationBias = explorationBias;
     this.discountRate = discountRate;
     this.maxDepth = maxDepth;
     this.evaluator = evaluator;
+    this.numInitialVisits = numInitialVisits;
   }
 
   /**
@@ -223,14 +238,37 @@ public class UctSearch<A extends Action> implements Agent<A> {
       updateTree(actionTree, reward);
       return reward;
     }
-    A action = uctSelectAction(actionTree, state);
+    if (actionTree.getValue().getNumVisits() <= numInitialVisits) {
+      double reward = -playRandomGame(player, state, depth + 1);
+      updateTree(actionTree, reward);
+      return reward;
+    } else {
+      A action = uctSelectAction(actionTree, state);
+      state.perform(action);
+      final double reward = discountRate *
+          -runSimulation(actionTree.child(action), state.getCurrentPlayer(), state, depth + 1);
+      updateTree(actionTree, reward);
+      return reward;      
+    }
+  }
+  
+  private double playRandomGame(Player player, State<A> state, int depth) {
+    if (depth > maxDepth || state.isTerminal()) {
+      return evaluator.evaluate(player, state);
+    }    
+    A action = randomAction(state);
     state.perform(action);
-    final double reward = discountRate *
-        -runSimulation(actionTree.child(action), state.getCurrentPlayer(), state, depth + 1);
-    updateTree(actionTree, reward);
-    return reward;
+    return playRandomGame(player, state, depth + 1);   
   }
 
+  /**
+   * @param state The current game state.
+   * @return A random action possible from this state.
+   */
+  private A randomAction(State<A> state) {
+    return state.getActions().get(random.nextInt(state.getActions().size()));
+  }
+  
   /**
    * Updates the tree at the given position, adding the given reward and
    * marking this node as visited
