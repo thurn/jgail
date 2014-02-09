@@ -44,7 +44,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
     private Evaluator<A> evaluator = new Evaluator<A>() {
       @Override
       public double evaluate(Player player, State<A> state) {
-        return state.getWinner() == player ? -1.0 : 1.0;
+        return state.getWinner() == player ? 1.0 : -1.0;
       }
     };
     
@@ -219,7 +219,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
   private double runSimulation(ActionTree<A, ActionData> actionTree, Player player, State<A> state,
       int depth) {
     if (depth > maxDepth || state.isTerminal()) {
-      double reward = evaluator.evaluate(player, state);
+      double reward = -evaluator.evaluate(player, state);
       updateTree(actionTree, reward);
       return reward;
     }
