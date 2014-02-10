@@ -1,5 +1,7 @@
 package ca.thurn.uct.core;
 
+import gnu.trove.list.TLongList;
+
 
 /**
  * Represents any given state of a given game. A state is responsible for
@@ -17,7 +19,7 @@ public interface FastState {
   /**
    * @return All of the actions which are currently possible from this state.
    */
-  public long[] getActions();
+  public TLongList getActions();
   
   /**
    * Performs the provided action by mutating the state. You should assume that
