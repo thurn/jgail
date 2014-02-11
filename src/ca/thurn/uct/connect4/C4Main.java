@@ -3,9 +3,9 @@ package ca.thurn.uct.connect4;
 import java.util.ArrayList;
 import java.util.List;
 
-import ca.thurn.uct.algorithm.FastNegamaxSearch;
-import ca.thurn.uct.core.FastAgent;
-import ca.thurn.uct.core.FastMain;
+import ca.thurn.uct.algorithm.NegamaxSearch;
+import ca.thurn.uct.core.Agent;
+import ca.thurn.uct.core.Main;
 
 public class C4Main {
   public static void main(String[] args) {
@@ -17,10 +17,10 @@ public class C4Main {
 //    Main<C4Action> main = new Main<C4Action>(agents, new C4State().setToStartingConditions());
 //    main.runTournament(10);
 
-    List<FastAgent> fastAgents = new ArrayList<FastAgent>();
-    fastAgents.add(FastNegamaxSearch.builder(new FastC4State()).build());
-    fastAgents.add(FastNegamaxSearch.builder(new FastC4State()).build());
-    FastMain fastMain = new FastMain(fastAgents, new FastC4State().setToStartingConditions());
+    List<Agent> fastAgents = new ArrayList<Agent>();
+    fastAgents.add(NegamaxSearch.builder(new C4State()).build());
+    fastAgents.add(NegamaxSearch.builder(new C4State()).build());
+    Main fastMain = new Main(fastAgents, new C4State().setToStartingConditions());
     fastMain.runTournament(10);
   }
 }

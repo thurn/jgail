@@ -5,16 +5,17 @@ import java.util.Random;
 /**
  * A specific colored hex on the board of Ingenious.
  */
-public enum IngeniousHex {
-  ORANGE,
-  YELLOW,
-  PURPLE,
-  RED,
-  GREEN,
-  BLUE,
-  OFF_BOARD;
+public class IngeniousHex {
+  public static final int ORANGE = 1;
+  public static final int YELLOW = 2;
+  public static final int PURPLE = 3;
+  public static final int RED = 4;
+  public static final int GREEN = 5;
+  public static final int BLUE = 6;
+  public static final int OFF_BOARD = 7;
   
-  private static final boolean USE_COLOR = true;
+  private static final boolean USE_COLOR = false;
+  
   private static final String ANSI_RESET = "\u001B[0m";
   private static final String ANSI_RED = "\u001B[31m";
   private static final String ANSI_GREEN = "\u001B[32m";
@@ -23,20 +24,20 @@ public enum IngeniousHex {
   private static final String ANSI_PURPLE = "\u001B[35m";
   private static final String ANSI_CYAN = "\u001B[36m";
   
-  private static final IngeniousHex[] values = {ORANGE, YELLOW, PURPLE, RED, GREEN, BLUE};
-    private static final Random random = new Random();
+  private static final int[] values = {ORANGE, YELLOW, PURPLE, RED, GREEN, BLUE};
+  private static final Random random = new Random();
   
-  public static IngeniousHex randomHex() {
+  public static int randomHex() {
     return values[random.nextInt(values.length)];
   }
   
-  public static IngeniousHex[] allColors() {
+  public static int[] allColors() {
     return values;
   }
-
-  public String toString() {
+  
+  public static String toString(int hex) {
     if (USE_COLOR) {
-      switch(this) {
+      switch(hex) {
         case BLUE:
           return ANSI_BLUE + "BB" + ANSI_RESET;
         case GREEN:
@@ -52,10 +53,10 @@ public enum IngeniousHex {
         case OFF_BOARD:
           return "";
         default:
-          throw new RuntimeException();   
+          throw new RuntimeException();
       }
     } else {
-      switch(this) {
+      switch(hex) {
         case BLUE:
           return "BB";
         case GREEN:
@@ -72,7 +73,7 @@ public enum IngeniousHex {
           return "";
         default:
           throw new RuntimeException();
-      }    
+      }      
     }
   }
 }

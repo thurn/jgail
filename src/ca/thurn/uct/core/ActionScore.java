@@ -5,24 +5,24 @@ package ca.thurn.uct.core;
  * 
  * @param <A> Action type to use.
  */
-public class ActionScore<A extends Action> {
+public class ActionScore {
   private final double score;
-  private final A action;
+  private final long action;
   
   /**
    * An ActionScore with a score of 0.
    * 
    * @param action The action.
    */
-  public ActionScore(A action) {
-    this(0.0, action);
+  public ActionScore(long action) {
+    this(action, 0.0);
   }
   
   /**
    * @param score The score.
    * @param action The action.
    */
-  public ActionScore(double score, A action) {
+  public ActionScore(long action, double score) {
     this.score = score;
     this.action = action;
   }
@@ -37,7 +37,7 @@ public class ActionScore<A extends Action> {
   /**
    * @return The action.
    */
-  public A getAction() {
+  public long getAction() {
     return action;
   }
 }

@@ -6,7 +6,7 @@ package ca.thurn.uct.core;
  *
  * @param <A> Action type for this game
  */
-public interface Agent<A extends Action> {
+public interface Agent {
   /**
    * Picks an action for the provided player to take from the provided root
    * node. 
@@ -20,10 +20,12 @@ public interface Agent<A extends Action> {
    *     score for this action, where a higher number indicates a better action
    *     for the player.
    */
-  public ActionScore<A> pickAction(Player player, State<A> rootNode);
+  public long pickAction(int player, State rootNode);
+  
+  public double getScoreForLastAction();
   
   /**
    * @return A null-initialized state object
    */
-  public State<A> getStateRepresentation();
+  public State getStateRepresentation();
 }

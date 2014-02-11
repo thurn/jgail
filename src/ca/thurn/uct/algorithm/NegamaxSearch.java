@@ -1,11 +1,10 @@
 package ca.thurn.uct.algorithm;
 
-import ca.thurn.uct.core.Action;
+import gnu.trove.list.TLongList;
 import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.AgentEvaluator;
 import ca.thurn.uct.core.Evaluator;
-import ca.thurn.uct.core.Player;
 import ca.thurn.uct.core.State;
 
 /**
@@ -13,34 +12,34 @@ import ca.thurn.uct.core.State;
  * 
  * @param <A> The action type to use.
  */
-public class NegamaxSearch<A extends Action> implements Agent<A> {
+public class NegamaxSearch implements Agent {
   
   /**
    * Builder for NegamaxSearch.
    *
    * @param <A> The action type to use.
    */
-  public static class Builder<A extends Action> {
-    private final State<A> stateRepresentation;
+  public static class Builder {
+    private final State stateRepresentation;
     private int searchDepth = 4;
-    private Evaluator<A> evaluator;
+    private Evaluator evaluator;
     
     /**
      * Constructor.
      * 
      * @param stateRepresentation State representation to employ.
      */
-    public Builder(State<A> stateRepresentation) {
+    public Builder(State stateRepresentation) {
       this.stateRepresentation = stateRepresentation;
-      this.evaluator = new AgentEvaluator<A>(
+      this.evaluator = new AgentEvaluator(
           MonteCarloSearch.builder(stateRepresentation).setNumSimulations(1000).build());
     }
 
     /**
      * @return A new NegamaxSearch agent based on this builder.
      */
-    public NegamaxSearch<A> build() {
-      return new NegamaxSearch<A>(stateRepresentation, searchDepth, evaluator);
+    public NegamaxSearch build() {
+      return new NegamaxSearch(stateRepresentation, searchDepth, evaluator);
     }
     
     /**
@@ -48,7 +47,7 @@ public class NegamaxSearch<A extends Action> implements Agent<A> {
      *     search tree. Default value: 4.
      * @return this.
      */
-    public Builder<A> setSearchDepth(int searchDepth) {
+    public Builder setSearchDepth(int searchDepth) {
       this.searchDepth = searchDepth;
       return this;
     }
@@ -59,7 +58,7 @@ public class NegamaxSearch<A extends Action> implements Agent<A> {
      *     {@link AgentEvaluator} based on a {@link MonteCarloSearch} agent.
      * @return
      */
-    public Builder<A> setEvaluator(Evaluator<A> evaluator) {
+    public Builder setEvaluator(Evaluator evaluator) {
       this.evaluator = evaluator;
       return this;
     }    
@@ -69,15 +68,16 @@ public class NegamaxSearch<A extends Action> implements Agent<A> {
    * @param stateRepresentation State representation to employ.
    * @return A new builder for NegamaxSearch agents.
    */
-  public static <A extends Action> Builder<A> builder(State<A> stateRepresentation) {
-    return new Builder<A>(stateRepresentation);
+  public static Builder builder(State stateRepresentation) {
+    return new Builder(stateRepresentation);
   }
   
-  private final State<A> stateRepresentation;
+  private final State stateRepresentation;
   private final int searchDepth;
-  private final Evaluator<A> evaluator;
+  private final Evaluator evaluator;
+  private double lastActionScore;
   
-  private NegamaxSearch(State<A> stateRepresentation, int searchDepth, Evaluator<A> evaluator) {
+  private NegamaxSearch(State stateRepresentation, int searchDepth, Evaluator evaluator) {
     this.stateRepresentation = stateRepresentation;
     this.searchDepth = searchDepth;
     this.evaluator = evaluator;
@@ -87,31 +87,36 @@ public class NegamaxSearch<A extends Action> implements Agent<A> {
    * {@inheritDoc}
    */
   @Override
-  public ActionScore<A> pickAction(Player player, State<A> rootNode) {
-    ActionScore<A> result = search(player, rootNode, searchDepth, Double.NEGATIVE_INFINITY,
+  public long pickAction(int player, State rootNode) {
+    ActionScore result = search(player, rootNode, searchDepth, Double.NEGATIVE_INFINITY,
         Double.POSITIVE_INFINITY);
-    if (result.getAction() == null) {
-      throw new RuntimeException();
-    }
-    return result;
+    lastActionScore = result.getScore();
+    return result.getAction();
+  }
+  
+  @Override
+  public double getScoreForLastAction() {
+   return lastActionScore; 
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public State<A> getStateRepresentation() {
+  public State getStateRepresentation() {
     return stateRepresentation;
   }
   
-  private ActionScore<A> search(Player player, State<A> state, int maxDepth, double alpha,
+  private ActionScore search(int player, State state, int maxDepth, double alpha,
       double beta) {
     if (state.isTerminal() || maxDepth == 0) {
-      return new ActionScore<A>(evaluator.evaluate(player, state.copy()), null);
+      return new ActionScore(-1, evaluator.evaluate(player, state.copy()));
     }
     double bestValue = Double.NEGATIVE_INFINITY;
-    A bestAction = null;
-    for (A action : state.getActions()) {     
+    long bestAction = -1;
+    TLongList actions = state.getActions();
+    for (int i = 0; i < actions.size(); ++i) {
+      long action = actions.get(i);
       state.perform(action);
       double value = -1 *
           search(state.getCurrentPlayer(), state, maxDepth - 1, -beta, -alpha).getScore();
@@ -127,7 +132,7 @@ public class NegamaxSearch<A extends Action> implements Agent<A> {
         break;
       }
     }
-    return new ActionScore<A>(bestValue, bestAction);
+    return new ActionScore(bestAction, bestValue);
   }
 
   @Override

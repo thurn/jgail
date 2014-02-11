@@ -1,36 +1,25 @@
 package ca.thurn.uct.connect4;
 
-import ca.thurn.uct.core.Action;
-import ca.thurn.uct.core.Player;
 
 /**
  * An Action in a game of Connect 4
  */
-public class C4Action implements Action {
-    /**
-     * The column in which you will drop your piece.
-     */
-    private final int columnNumber;
-    
-    /**
-     * The player performing this action
-     */
-    private final Player player;
-    
-    public C4Action(Player player, int columnNumber) {
-        this.player = player;
-        this.columnNumber = columnNumber;
-    }
+public class C4Action {	
+  public static long create(int player, int columnNumber) {
+	  return ((long)columnNumber << 32) | (long)player;
+	}
 
-  int getColumnNumber() {
-    return columnNumber;
+  public static int getColumnNumber(long action) {
+    return (int)(action >> 32);
   }
 
-  Player getPlayer() {
-    return player;
+  public static int getPlayer(long action) {
+    return (int)action;
   }
   
-  public String toString() {
-    return "[" + columnNumber + "]";
+  public static String toString(long action) {
+    return "[" + getColumnNumber(action) + "]";
   }
 }
+
+

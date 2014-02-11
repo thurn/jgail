@@ -1,20 +1,21 @@
 package ca.thurn.uct.ingenious;
 
-import java.util.ArrayList;
+import gnu.trove.list.TIntList;
+import gnu.trove.list.TLongList;
+import gnu.trove.list.array.TIntArrayList;
+import gnu.trove.list.array.TLongArrayList;
+import gnu.trove.map.TIntIntMap;
+import gnu.trove.map.hash.TIntIntHashMap;
+
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import ca.thurn.uct.core.Player;
 import ca.thurn.uct.core.State;
-import ca.thurn.uct.core.Util;
 
 /**
  * State class for the game Ingenious.
  */
-public class IngeniousState implements State<IngeniousAction> {
+public class IngeniousState implements State {
   
   private static final int BOARD_SIZE = 11;
   private static final int HAND_SIZE = 6;
@@ -23,12 +24,14 @@ public class IngeniousState implements State<IngeniousAction> {
     NE, E, SE, SW, W, NW
   }
   
+  private TLongList actions;
   // 11x11 board using the axial coordinate system
-  List<IngeniousAction> actions;
-  IngeniousHex[][] board;
-  Player currentPlayer;
-  Map<Player, List<IngeniousPiece>> hands;
-  Map<Player, Map<IngeniousHex, Integer>> scores;
+  private int[][] board;
+  private int currentPlayer;
+  private TIntList p1Hand;
+  private TIntList p2Hand;
+  private TIntIntMap p1Score;
+  private TIntIntMap p2Score;
   
   /**
    * Null-initializing constructor.
@@ -36,21 +39,23 @@ public class IngeniousState implements State<IngeniousAction> {
   public IngeniousState() {
   }
 
-  private IngeniousState(List<IngeniousAction> actions, IngeniousHex[][] board,
-      Player currentPlayer, Map<Player, List<IngeniousPiece>> hands,
-      Map<Player, Map<IngeniousHex, Integer>> scores) {
+  IngeniousState(TLongList actions, int[][] board,
+      int currentPlayer, TIntList p1Hand, TIntList p2Hand,
+      TIntIntMap p1Score, TIntIntMap p2Score) {
     this.actions = actions;
     this.board = board;
     this.currentPlayer = currentPlayer;
-    this.hands = hands;
-    this.scores = scores;
+    this.p1Hand = p1Hand;
+    this.p2Hand = p2Hand;
+    this.p1Score = p1Score;
+    this.p2Score = p2Score;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public List<IngeniousAction> getActions() {
+  public TLongList getActions() {
     return actions;
   }
 
@@ -58,41 +63,54 @@ public class IngeniousState implements State<IngeniousAction> {
    * {@inheritDoc}
    */
   @Override
-  public void perform(IngeniousAction action) {
+  public void perform(long action) {
     // Perform move
-    board[action.getX1()][action.getY1()] = action.getPiece().getHex1();
-    board[action.getX2()][action.getY2()] = action.getPiece().getHex2();
+    board[IngeniousAction.getX1(action)][IngeniousAction.getY1(action)] = 
+        IngeniousPiece.getHex1(IngeniousAction.getPiece(action));
+    board[IngeniousAction.getX2(action)][IngeniousAction.getY2(action)] = 
+        IngeniousPiece.getHex2(IngeniousAction.getPiece(action));
     
     // Score points
-    Map<IngeniousHex, Integer> myScores = scores.get(currentPlayer);
-    IngeniousHex hex1 = action.getPiece().getHex1();
-    IngeniousHex hex2 = action.getPiece().getHex2();
+    TIntIntMap myScores = scoresForPlayer(currentPlayer);
+    int hex1 = IngeniousPiece.getHex1(IngeniousAction.getPiece(action));
+    int hex2 = IngeniousPiece.getHex2(IngeniousAction.getPiece(action));
     Direction exclude1 = 
-        hexDirection(action.getX1(), action.getY1(), action.getX2(), action.getY2());
+        hexDirection(IngeniousAction.getX1(action), IngeniousAction.getY1(action),
+            IngeniousAction.getX2(action), IngeniousAction.getY2(action));
     Direction exclude2 =
-        hexDirection(action.getX2(), action.getY2(), action.getX1(), action.getY1());
-    myScores.put(hex1, Util.getWithDefault(myScores, hex1, 0) + 
-        scoreForHex(action.getX1(), action.getY1(), hex1, exclude1));
-    myScores.put(hex2, Util.getWithDefault(myScores, hex2, 0) + 
-        scoreForHex(action.getX2(), action.getY2(), hex2, exclude2));    
+        hexDirection(IngeniousAction.getX2(action), IngeniousAction.getY2(action),
+            IngeniousAction.getX1(action), IngeniousAction.getY1(action));
+    myScores.put(hex1, myScores.get(hex1) + 
+        scoreForHex(IngeniousAction.getX1(action), IngeniousAction.getY1(action), hex1, exclude1));
+    myScores.put(hex2, myScores.get(hex2) + 
+        scoreForHex(IngeniousAction.getX2(action), IngeniousAction.getY2(action), hex2, exclude2));    
     
     // Update hand
-    List<IngeniousPiece> hand = hands.get(currentPlayer);
-    hand.remove(action.getPiece());
+    TIntList hand = handForPlayer(currentPlayer);
+    hand.remove(IngeniousAction.getPiece(action));
     hand.add(randomPiece());
 
     currentPlayer = playerAfter(currentPlayer);
-    actions = allActions(hands.get(currentPlayer));
-    if (hands.get(Player.PLAYER_ONE).size() > 6 || hands.get(Player.PLAYER_TWO).size() > 6) {
+    actions = allActions(handForPlayer(currentPlayer));
+    
+    if (p1Hand.size() > 6 || p2Hand.size() > 6) {
       throw new RuntimeException();
-    }    
+    }
+  }
+  
+  private TIntIntMap scoresForPlayer(int player) {
+    return player == Player.PLAYER_ONE ? p1Score : p2Score;
+  }
+  
+  private TIntList handForPlayer(int player) {
+    return player == Player.PLAYER_ONE ? p1Hand : p2Hand;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void undo(IngeniousAction action) {
+  public void undo(long action) {
     throw new UnsupportedOperationException();
   }
 
@@ -100,25 +118,19 @@ public class IngeniousState implements State<IngeniousAction> {
    * {@inheritDoc}
    */
   @Override
-  public State<IngeniousAction> setToStartingConditions() {
-    this.board = new IngeniousHex[BOARD_SIZE][BOARD_SIZE];
+  public State setToStartingConditions() {
+    this.board = new int[BOARD_SIZE][BOARD_SIZE];
     addInitialHexes(board);
     this.currentPlayer = Player.PLAYER_ONE;
-    this.hands = new HashMap<Player, List<IngeniousPiece>>();
-    List<IngeniousPiece> currentHand = randomHand();
-    this.hands.put(Player.PLAYER_ONE, currentHand);
-    this.hands.put(Player.PLAYER_TWO, randomHand());
-    HashMap<IngeniousHex, Integer> p1 = new HashMap<IngeniousHex, Integer>();
-    for (IngeniousHex hex : IngeniousHex.allColors()) {
-      p1.put(hex, 0);
+    TIntList currentHand = randomHand();
+    this.p1Hand = currentHand;
+    this.p2Hand = randomHand();
+    p1Score = new TIntIntHashMap();
+    p2Score = new TIntIntHashMap();    
+    for (int hex : IngeniousHex.allColors()) {
+      p1Score.put(hex, 0);
+      p2Score.put(hex, 0);
     }
-    HashMap<IngeniousHex, Integer> p2 = new HashMap<IngeniousHex, Integer>();
-    for (IngeniousHex hex : IngeniousHex.allColors()) {
-      p2.put(hex, 0);
-    }    
-    this.scores = new HashMap<Player, Map<IngeniousHex, Integer>>();
-    this.scores.put(Player.PLAYER_ONE, p1);
-    this.scores.put(Player.PLAYER_TWO, p2);
     actions = allActions(currentHand);
     return this;
   }
@@ -127,34 +139,28 @@ public class IngeniousState implements State<IngeniousAction> {
    * {@inheritDoc}
    */
   @Override
-  public State<IngeniousAction> copy() {
-    Map<Player, List<IngeniousPiece>> newHands = new HashMap<Player, List<IngeniousPiece>>();
-    for (Map.Entry<Player, List<IngeniousPiece>> entry : hands.entrySet()) {
-      newHands.put(entry.getKey(), new ArrayList<IngeniousPiece>(entry.getValue()));
-    }
-    Map<Player, Map<IngeniousHex, Integer>> newScores =
-        new HashMap<Player, Map<IngeniousHex, Integer>>();
-    for (Map.Entry<Player, Map<IngeniousHex, Integer>> entry : scores.entrySet()) {
-      newScores.put(entry.getKey(), new HashMap<IngeniousHex, Integer>(entry.getValue()));
-    }
-    return new IngeniousState(new ArrayList<IngeniousAction>(actions), copyBoard(),
-        currentPlayer, newHands, newScores);
+  public State copy() {
+    return new IngeniousState(new TLongArrayList(actions), copyBoard(),
+        currentPlayer, new TIntArrayList(p1Hand), new TIntArrayList(p2Hand),
+        new TIntIntHashMap(p1Score), new TIntIntHashMap(p2Score));
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public State<IngeniousAction> initialize(State<IngeniousAction> state) {
+  public State initialize(State state) {
     IngeniousState copy = (IngeniousState)state.copy();
     this.actions = copy.actions;
     this.board = copy.board;
     this.currentPlayer = copy.currentPlayer;
-    this.hands = copy.hands;
-    this.scores = copy.scores;
-    if (hands.get(Player.PLAYER_ONE).size() > 6 || hands.get(Player.PLAYER_TWO).size() > 6) {
+    this.p1Hand = copy.p1Hand;
+    this.p2Hand = copy.p2Hand;
+    this.p1Score = copy.p1Score;
+    this.p2Score = copy.p2Score;
+    if (p1Hand.size() > 6 || p2Hand.size() > 6) {
       throw new RuntimeException();
-    }   
+    }    
     return this;
   }
 
@@ -162,16 +168,15 @@ public class IngeniousState implements State<IngeniousAction> {
    * {@inheritDoc}
    */
   @Override
-  public Player playerAfter(Player player) {
-    return player == Player.PLAYER_ONE ? Player.PLAYER_TWO :
-      Player.PLAYER_ONE;
+  public int playerAfter(int player) {
+    return player == Player.PLAYER_ONE ? Player.PLAYER_TWO : Player.PLAYER_ONE;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public Player playerBefore(Player player) {
+  public int playerBefore(int player) {
     return playerAfter(player);
   }
 
@@ -187,7 +192,7 @@ public class IngeniousState implements State<IngeniousAction> {
    * {@inheritDoc}
    */
   @Override
-  public Player getCurrentPlayer() {
+  public int getCurrentPlayer() {
     return currentPlayer;
   }
   
@@ -195,21 +200,21 @@ public class IngeniousState implements State<IngeniousAction> {
    * {@inheritDoc}
    */
   @Override
-  public Player getWinner() {
-    ArrayList<Integer> p1 = new ArrayList<Integer>(scores.get(Player.PLAYER_ONE).values());
-    Collections.sort(p1);
-    ArrayList<Integer> p2 = new ArrayList<Integer>(scores.get(Player.PLAYER_TWO).values());
-    Collections.sort(p2);
+  public int getWinner() {
+    int[] p1 = p1Score.values();
+    Arrays.sort(p1);
+    int[] p2 = p2Score.values();
+    Arrays.sort(p2);
     
     for (int i = 0; i < 6; ++i) {
-      if (p1.get(i) > p2.get(i)) {
+      if (p1[i] > p2[i]) {
         return Player.PLAYER_ONE;
-      } else if (p2.get(i) > p1.get(i)) {
+      } else if (p2[i] > p1[i]) {
         return Player.PLAYER_TWO;
       }
     }
     
-    return null;
+    return 0;
   }
   
   /**
@@ -217,8 +222,8 @@ public class IngeniousState implements State<IngeniousAction> {
    * @param index Index of desired piece.
    * @return The piece at the indicating index in this player's hand.
    */
-  IngeniousPiece getPiece(Player player, int index) {
-    return hands.get(player).get(index);
+  int getPiece(int player, int index) {
+    return handForPlayer(player).get(index);
   }
   
   /**
@@ -228,7 +233,7 @@ public class IngeniousState implements State<IngeniousAction> {
    *     location.
    */
   boolean isOpen(int x, int y) {
-    return board[x][y] == null;
+    return board[x][y] == 0;
   }
 
   /**
@@ -236,11 +241,11 @@ public class IngeniousState implements State<IngeniousAction> {
    * @return A list of all actions possible from the current game state with
    *     the provided hand.
    */
-  private List<IngeniousAction> allActions(List<IngeniousPiece> hand) {
-    List<IngeniousAction> result = new ArrayList<IngeniousAction>();
+  private TLongList allActions(TIntList hand) {
+    TLongList result = new TLongArrayList(300);
     for (int x = 0; x < BOARD_SIZE; ++x) {
       for (int y = 0; y < BOARD_SIZE; ++y) {
-        if (board[x][y] == null) {
+        if (board[x][y] == 0) {
           addActionsForPosition(hand, result, x, y);
         }
       }
@@ -256,21 +261,21 @@ public class IngeniousState implements State<IngeniousAction> {
    * @param x X coordinate.
    * @param y Y coordinate.
    */
-  private void addActionsForPosition(List<IngeniousPiece> hand,  List<IngeniousAction> list,
+  private void addActionsForPosition(TIntList hand, TLongList list,
       int x, int y) {
-    if (y - 1 > 0 && y - 1 < BOARD_SIZE && board[x][y - 1] == null) {
+    if (y - 1 > 0 && y - 1 < BOARD_SIZE && board[x][y - 1] == 0) {
       addActionsForMove(hand, list, x, y, x, y - 1);
     } else if (x + 1 > 0 && x + 1 < BOARD_SIZE && y - 1 > 0 && y - 1 < BOARD_SIZE &&
-        board[x + 1][y - 1] == null) {
+        board[x + 1][y - 1] == 0) {
       addActionsForMove(hand, list, x, y, x + 1, y - 1);
-    } else if (x + 1 > 0 && x + 1 < BOARD_SIZE && board[x + 1][y] == null) {
+    } else if (x + 1 > 0 && x + 1 < BOARD_SIZE && board[x + 1][y] == 0) {
       addActionsForMove(hand, list, x, y, x + 1, y);
-    } else if (y + 1 > 0 && y + 1 < BOARD_SIZE && board[x][y + 1] == null) {
+    } else if (y + 1 > 0 && y + 1 < BOARD_SIZE && board[x][y + 1] == 0) {
       addActionsForMove(hand, list, x, y, x, y + 1);
     } else if (x - 1 > 0 && x - 1 < BOARD_SIZE && y + 1 > 0 && y + 1 < BOARD_SIZE &&
-        board[x - 1][y + 1] == null) {
+        board[x - 1][y + 1] == 0) {
       addActionsForMove(hand, list, x, y, x - 1 , y + 1);
-    } else if (x - 1 > 0 && x - 1 < BOARD_SIZE && board[x - 1][y] == null) {
+    } else if (x - 1 > 0 && x - 1 < BOARD_SIZE && board[x - 1][y] == 0) {
       addActionsForMove(hand, list, x, y, x - 1, y);
     }
   }
@@ -286,18 +291,18 @@ public class IngeniousState implements State<IngeniousAction> {
    * @param x2 Second hex X coordinate.
    * @param y2 Second hex Y coordinate.
    */
-  private void addActionsForMove(List<IngeniousPiece> hand, List<IngeniousAction> list,
+  private void addActionsForMove(TIntList hand, TLongList list,
       int x1, int y1, int x2, int y2) {
-    for (IngeniousPiece piece : hand) {
-      list.add(new IngeniousAction(piece, x1, y1, x2, y2));
+    for (int i = 0; i < hand.size(); ++i) {
+      list.add(IngeniousAction.create(hand.get(i), x1, y1, x2, y2));
     }
   }
   
   /**
    * @return A randomly generated hand of pieces.
    */
-  private List<IngeniousPiece> randomHand() {
-    List<IngeniousPiece> hand = new ArrayList<IngeniousPiece>(HAND_SIZE);
+  private TIntList randomHand() {
+    TIntList hand = new TIntArrayList(HAND_SIZE);
     for (int i = 0; i < HAND_SIZE; ++i) {
       hand.add(randomPiece());
     }
@@ -307,8 +312,8 @@ public class IngeniousState implements State<IngeniousAction> {
   /**
    * @return A randomly generated piece.
    */
-  private IngeniousPiece randomPiece() {
-    return new IngeniousPiece(IngeniousHex.randomHex(), IngeniousHex.randomHex());
+  private int randomPiece() {
+    return IngeniousPiece.create(IngeniousHex.randomHex(), IngeniousHex.randomHex());
   }
   
   /**
@@ -318,7 +323,7 @@ public class IngeniousState implements State<IngeniousAction> {
    *
    * @param board The board.
    */
-  private void addInitialHexes(IngeniousHex[][] board) {
+  private void addInitialHexes(int[][] board) {
     board[0][0] = IngeniousHex.OFF_BOARD;
     board[0][1] = IngeniousHex.OFF_BOARD;
     board[0][2] = IngeniousHex.OFF_BOARD;
@@ -362,8 +367,8 @@ public class IngeniousState implements State<IngeniousAction> {
   /**
    * @return A copy of the current board.
    */
-  private IngeniousHex[][] copyBoard() {
-    IngeniousHex[][] result = new IngeniousHex[BOARD_SIZE][BOARD_SIZE];
+  private int[][] copyBoard() {
+    int[][] result = new int[BOARD_SIZE][BOARD_SIZE];
     for (int i = 0; i < BOARD_SIZE; ++i) {
       result[i] = Arrays.copyOf(board[i], BOARD_SIZE);
     }
@@ -381,7 +386,7 @@ public class IngeniousState implements State<IngeniousAction> {
    *     direction of a piece's sibling hex. 
    * @return Total score for placing this hex at these coordinates.
    */
-  private int scoreForHex(int x, int y, IngeniousHex hex, Direction excludeDirection) {
+  private int scoreForHex(int x, int y, int hex, Direction excludeDirection) {
     int total = 0;
     if (Direction.NE != excludeDirection) {
       total += countInDirection(x + 1, y - 1, hex, Direction.NE);
@@ -415,8 +420,8 @@ public class IngeniousState implements State<IngeniousAction> {
    * @return The number of hexes in a line in the provided direction from the
    *     given coordiantes.
    */
-  private int countInDirection(int x, int y, IngeniousHex hex, Direction direction) {
-    if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE || board[x][y] == null ||
+  private int countInDirection(int x, int y, int hex, Direction direction) {
+    if (x < 0 || y < 0 || x >= BOARD_SIZE || y >= BOARD_SIZE || board[x][y] == 0 ||
         board[x][y] != hex) {
       return 0;
     }
@@ -492,13 +497,16 @@ public class IngeniousState implements State<IngeniousAction> {
    */
   private void scoresToString(StringBuilder result) {
     result.append("Scores:\n");
-    for (Player player : scores.keySet()) {
-      result.append(player + ":");
-      for (IngeniousHex hex : IngeniousHex.allColors()) {
-        result.append(" " + hex + "=" + Util.getWithDefault(scores.get(player), hex, 0));
+      result.append("Player 1:");
+      for (int hex : IngeniousHex.allColors()) {
+        result.append(" " + IngeniousHex.toString(hex) + "=" + p1Score.get(hex));
       }
       result.append("\n");
-    }
+      result.append("Player 2:");
+      for (int hex : IngeniousHex.allColors()) {
+        result.append(" " + IngeniousHex.toString(hex) + "=" + p2Score.get(hex));
+      }
+      result.append("\n");
   }
 
   /**
@@ -511,7 +519,7 @@ public class IngeniousState implements State<IngeniousAction> {
     for (int y = 0; y < BOARD_SIZE; ++y) {
       addSpaces(result, 2*Math.abs(5 - y));
       for (int x = 0; x < BOARD_SIZE; ++x) {
-        if (board[x][y] == null) {
+        if (board[x][y] == 0) {
           if (x == 10) {
             result.append("[T" + y % 10 + "]");            
           } else if (y == 10) {
@@ -522,7 +530,7 @@ public class IngeniousState implements State<IngeniousAction> {
           
         } else {
           if (board[x][y] != IngeniousHex.OFF_BOARD) {
-            result.append("[" + board[x][y].toString() + "]");
+            result.append("[" + IngeniousHex.toString(board[x][y]) + "]");
           }
         }
       }
@@ -538,8 +546,9 @@ public class IngeniousState implements State<IngeniousAction> {
   private void handsToString(StringBuilder result) {
     result.append("\nHand:\n");
     int pieceNumber = 0;
-    for (IngeniousPiece piece : hands.get(currentPlayer)) {
-      result.append(" " + pieceNumber + ") " + piece);
+    TIntList hand = handForPlayer(currentPlayer);
+    for (int i = 0; i < hand.size(); ++i) {
+      result.append(" " + pieceNumber + ") " + IngeniousPiece.toString(hand.get(i)));
       pieceNumber++;
     }
   }

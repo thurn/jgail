@@ -9,24 +9,11 @@ import java.util.Map;
  * @param <A> The action type used in this game tree.
  * @param <V> The value type to associate with a position in the tree.
  */
-public class ActionTree<A extends Action, V> {
+public class ActionTree {
   
-  /**
-   * Interface to allow mutating values in the tree. 
-   */
-  public static interface Mutator<V> {
-    /**
-     * Mutates the provided tree as desired, writing the new value to the tree.
-     *
-     * @param tree The current value in the tree.
-     * @return The new value to store in this position in the tree.
-     */
-    public V mutate(V value);
-  }
-  
-  private final Map<A, ActionTree<A, V>> children;
-  private final V defaultValue;
-  private V value;
+  private final Map<Long, ActionTree> children;
+  private int numVisits;
+  private double totalReward;
   
   /**
    * Constructs a new ActionTree root node.
@@ -34,10 +21,8 @@ public class ActionTree<A extends Action, V> {
    * @param defaultValue The initial value to associate with all newly created
    *     tree nodes.
    */
-  public ActionTree(V defaultValue) {
-    this.children = new HashMap<A, ActionTree<A, V>>();
-    this.defaultValue = defaultValue;
-    this.value = defaultValue;
+  public ActionTree() {
+    this.children = new HashMap<Long, ActionTree>();
   }
   
   /**
@@ -49,28 +34,28 @@ public class ActionTree<A extends Action, V> {
    *     ActionTree will be created and initialized with this value.
    * @return The child ActionTree associated with this value.
    */
-  public ActionTree<A, V> child(A action) {
-    ActionTree<A, V> result = children.get(action);
+  public ActionTree child(long action) {
+    ActionTree result = children.get(action);
     if (result == null) {
-      result = new ActionTree<A, V>(defaultValue);
+      result = new ActionTree();
       children.put(action, result);
     }
     return result;
   }
   
-  /**
-   * Mutate the value at the current position in the tree.
-   *
-   * @param mutator Mutator to employ.
-   */
-  public void mutate(Mutator<V> mutator) {
-    this.value = mutator.mutate(value);
+  public void incrementNumVisits() {
+    numVisits++;
   }
-
-  /**
-   * @return The value currently stored at this position in the tree. 
-   */
-  public V getValue() {
-    return value;
+  
+  public void addReward(double reward) {
+    totalReward += reward;
+  }
+  
+  public int getNumVisits() {
+    return numVisits;
+  }
+  
+  public double getTotalReward() {
+    return totalReward;
   }
 }

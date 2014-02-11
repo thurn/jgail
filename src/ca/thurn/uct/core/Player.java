@@ -1,9 +1,6 @@
 package ca.thurn.uct.core;
 
-/**
- * Identifiers for possible players in a two-player game.
- */
-public enum Player {
-  PLAYER_ONE,
-  PLAYER_TWO;
+public class Player {
+  public static final int PLAYER_ONE = 1;
+  public static final int PLAYER_TWO = 2;
 }

@@ -1,8 +1,9 @@
 package ca.thurn.uct.connect4;
 
-import java.util.ArrayList;
+import gnu.trove.list.TLongList;
+import gnu.trove.list.array.TLongArrayList;
+
 import java.util.Arrays;
-import java.util.List;
 
 import ca.thurn.uct.core.Player;
 import ca.thurn.uct.core.State;
@@ -10,21 +11,21 @@ import ca.thurn.uct.core.State;
 /**
  * State class for a game of Connect4.
  */
-public class C4State implements State<C4Action> {
+public class C4State implements State {
   
   private static final int BOARD_HEIGHT = 6;
   private static final int BOARD_WIDTH = 7;  
-  private static final List<C4Action> p1Actions;
-  private static final List<C4Action> p2Actions;  
+  private static final TLongList p1Actions;
+  private static final TLongList p2Actions;  
   static {
-    p1Actions = new ArrayList<C4Action>();
+    p1Actions = new TLongArrayList();
     for (int i = 0; i < BOARD_WIDTH; ++i) {
-      p1Actions.add(new C4Action(Player.PLAYER_ONE, i));            
+      p1Actions.add(C4Action.create(Player.PLAYER_ONE, i));            
     }
 
-    p2Actions = new ArrayList<C4Action>();
+    p2Actions = new TLongArrayList();
     for (int i = 0; i < BOARD_WIDTH; ++i) {
-      p2Actions.add(new C4Action(Player.PLAYER_TWO, i));
+      p2Actions.add(C4Action.create(Player.PLAYER_TWO, i));   
     }
   }
   
@@ -34,10 +35,10 @@ public class C4State implements State<C4Action> {
   
   // Indexed as board[column][row] with the origin being in the bottom left,
   // null represents an empty space.
-  Player[][] board;
-  List<C4Action> actions;
-  Player currentPlayer;
-  Player winner;
+  private int[][] board;
+  private TLongList actions;
+  private int currentPlayer;
+  private int winner;
   
   /**
    * Null-initializes this state. The state will not be usable until one of
@@ -54,7 +55,7 @@ public class C4State implements State<C4Action> {
    * @param currentPlayer
    * @param winner
    */
-  private C4State(Player[][] board, List<C4Action> actions, Player currentPlayer, Player winner) {
+  C4State(int[][] board, TLongList actions, int currentPlayer, int winner) {
     this.board = board;
     this.actions = actions;
     this.currentPlayer = currentPlayer;
@@ -65,7 +66,7 @@ public class C4State implements State<C4Action> {
    * {@inheritDoc}
    */
   @Override
-  public List<C4Action> getActions() {
+  public TLongList getActions() {
     return actions;
   }
 
@@ -73,13 +74,13 @@ public class C4State implements State<C4Action> {
    * {@inheritDoc}
    */
   @Override
-  public void perform(C4Action action) {
+  public void perform(long action) {
     int freeSpace = 0;
-    while (board[action.getColumnNumber()][freeSpace] != null) {
+    while (board[C4Action.getColumnNumber(action)][freeSpace] != 0) {
       freeSpace++;
     }
-    board[action.getColumnNumber()][freeSpace] = currentPlayer;
-    winner = computeWinner(currentPlayer, action.getColumnNumber(), freeSpace);
+    board[C4Action.getColumnNumber(action)][freeSpace] = currentPlayer;
+    winner = computeWinner(currentPlayer, C4Action.getColumnNumber(action), freeSpace);
     currentPlayer = playerAfter(currentPlayer);
     actions = actionsForCurrentPlayer();
   }
@@ -88,13 +89,13 @@ public class C4State implements State<C4Action> {
    * {@inheritDoc}
    */
   @Override
-  public void undo(C4Action action) {
+  public void undo(long action) {
     int freeCell = BOARD_HEIGHT - 1;
-    while (board[action.getColumnNumber()][freeCell] == null) {
+    while (board[C4Action.getColumnNumber(action)][freeCell] == 0) {
       freeCell--;
     }
-    board[action.getColumnNumber()][freeCell] = null;
-    winner = null;
+    board[C4Action.getColumnNumber(action)][freeCell] = 0;
+    winner = 0;
     currentPlayer = playerBefore(currentPlayer);
     actions = actionsForCurrentPlayer();
   }
@@ -104,8 +105,8 @@ public class C4State implements State<C4Action> {
    */
   @Override
   public C4State setToStartingConditions() {
-    board = new Player[BOARD_WIDTH][BOARD_HEIGHT];
-    winner = null;
+    board = new int[BOARD_WIDTH][BOARD_HEIGHT];
+    winner = 0;
     currentPlayer = Player.PLAYER_ONE;
     actions = actionsForCurrentPlayer();
     return this;
@@ -115,15 +116,15 @@ public class C4State implements State<C4Action> {
    * {@inheritDoc}
    */
   @Override
-  public State<C4Action> copy() {
-    return new C4State(copyBoard(), new ArrayList<C4Action>(actions), currentPlayer, winner);
+  public State copy() {
+    return new C4State(copyBoard(), new TLongArrayList(actions), currentPlayer, winner);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public C4State initialize(State<C4Action> state) {
+  public C4State initialize(State state) {
     C4State temp = (C4State)state.copy();
     this.board = temp.board;
     this.winner = temp.winner;
@@ -138,14 +139,14 @@ public class C4State implements State<C4Action> {
   @Override
   public boolean isTerminal() {
     if (actions.size() == 0) return true; // Draw
-    return winner != null;
+    return winner != 0;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public Player getWinner() {
+  public int getWinner() {
     return winner;
   }
 
@@ -153,7 +154,7 @@ public class C4State implements State<C4Action> {
    * {@inheritDoc}
    */
   @Override
-  public Player getCurrentPlayer() {
+  public int getCurrentPlayer() {
     return currentPlayer;
   }
 
@@ -161,7 +162,7 @@ public class C4State implements State<C4Action> {
    * {@inheritDoc}
    */
   @Override
-  public Player playerAfter(Player player) {
+  public int playerAfter(int player) {
     return player == Player.PLAYER_ONE ? Player.PLAYER_TWO :
         Player.PLAYER_ONE;
   }
@@ -170,7 +171,7 @@ public class C4State implements State<C4Action> {
    * {@inheritDoc}
    */
   @Override
-  public Player playerBefore(Player player) {
+  public int playerBefore(int player) {
     return playerAfter(player);
   }
   
@@ -179,8 +180,8 @@ public class C4State implements State<C4Action> {
     StringBuilder result = new StringBuilder();
     for (int row = 5; row >= 0; --row) {
       for (int column = 0; column < 7; ++column) {
-        Player p = board[column][row];
-        if (p == null) {
+        int p = board[column][row];
+        if (p == 0) {
           result.append("-");
         } else {
           result.append(p ==  Player.PLAYER_TWO ? "X" : "O");
@@ -195,11 +196,12 @@ public class C4State implements State<C4Action> {
    * @return A list of actions the current player could legally take from 
    *     the current state.
    */
-  private List<C4Action> actionsForCurrentPlayer() {
-    List<C4Action> actions = currentPlayer == Player.PLAYER_TWO ? p2Actions : p1Actions;
-    List<C4Action> result = new ArrayList<C4Action>();
-    for (C4Action action : actions) {
-      if (board[action.getColumnNumber()][BOARD_HEIGHT - 1] == null) {
+  private TLongList actionsForCurrentPlayer() {
+    TLongList actions = currentPlayer == Player.PLAYER_TWO ? p2Actions : p1Actions;
+    TLongList result = new TLongArrayList();
+    for (int i = 0; i < actions.size(); ++i) {
+      long action = actions.get(i);
+      if (board[C4Action.getColumnNumber(action)][BOARD_HEIGHT - 1] == 0) {
         result.add(action);
       }
     }
@@ -215,7 +217,7 @@ public class C4State implements State<C4Action> {
    * @return The provided player if this move was a winning move for that
    *     player, otherwise null.
    */
-  private Player computeWinner(Player player, int moveColumn, int moveRow) {
+  private int computeWinner(int player, int moveColumn, int moveRow) {
     // Vertical win?
     if (countGroupSize(moveColumn, moveRow - 1, Direction.S, player) >= 3) {
       return player;
@@ -238,7 +240,7 @@ public class C4State implements State<C4Action> {
     }
     
     // No win
-    return null;
+    return 0;
   }
 
   /**
@@ -252,7 +254,7 @@ public class C4State implements State<C4Action> {
    *     provided column and row, which can be found in a line in the provided
    *     direction.
    */
-  private int countGroupSize(int col, int row, Direction dir, Player player) {
+  private int countGroupSize(int col, int row, Direction dir, int player) {
     if (row < 6 && row >= 0 && col < 7 && col >= 0
         && board[col][row] == player) {
       switch (dir) {
@@ -283,8 +285,8 @@ public class C4State implements State<C4Action> {
   /**
    * @return A copy of the game's current board.
    */
-  private Player[][] copyBoard() {
-    Player[][] result = new Player[BOARD_WIDTH][BOARD_HEIGHT];
+  private int[][] copyBoard() {
+    int[][] result = new int[BOARD_WIDTH][BOARD_HEIGHT];
     for (int i = 0; i < BOARD_WIDTH; ++i) {
       result[i] = Arrays.copyOf(board[i], BOARD_HEIGHT);
     }

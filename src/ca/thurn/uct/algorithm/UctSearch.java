@@ -1,23 +1,19 @@
 package ca.thurn.uct.algorithm;
 
+import gnu.trove.list.TLongList;
+
 import java.util.Random;
 
-import ca.thurn.uct.core.Action;
-import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.ActionTree;
-import ca.thurn.uct.core.ActionTree.Mutator;
 import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Evaluator;
-import ca.thurn.uct.core.Player;
 import ca.thurn.uct.core.State;
 
 /**
  * An agent which selects actions based on the UCT algorithm described in the
  * 2006 paper "Bandit based Monte-Carlo Planning" by Kocsis and Szepesvari.
- *
- * @param <A> Action type to use.
  */
-public class UctSearch<A extends Action> implements Agent<A> {
+public class UctSearch implements Agent {
   
   /**
     * This exploration bias value, 1/sqrt(2), was shown by Kocsis and
@@ -30,8 +26,8 @@ public class UctSearch<A extends Action> implements Agent<A> {
    *
    * @param <A> Action type to use.
    */
-  public static class Builder<A extends Action> {
-    private final State<A> stateRepresentation;
+  public static class Builder {
+    private final State stateRepresentation;
     
     private int numSimulations = 100000;
   
@@ -43,9 +39,9 @@ public class UctSearch<A extends Action> implements Agent<A> {
     
     private int numInitialVisits = 0;
     
-    private Evaluator<A> evaluator = new Evaluator<A>() {
+    private Evaluator evaluator = new Evaluator() {
       @Override
-      public double evaluate(Player player, State<A> state) {
+      public double evaluate(int player, State state) {
         return state.getWinner() == player ? 1.0 : -1.0;
       }
     };
@@ -55,15 +51,15 @@ public class UctSearch<A extends Action> implements Agent<A> {
      * 
      * @param stateRepresentation State representation to employ for this agent.
      */
-    public Builder(State<A> stateRepresentation) {
+    public Builder(State stateRepresentation) {
       this.stateRepresentation = stateRepresentation;
     }
     
     /**
      * @return A new UctSearch agent based on this builder.
      */
-    public UctSearch<A> build() {
-      return new UctSearch<A>(stateRepresentation, numSimulations, explorationBias,
+    public UctSearch build() {
+      return new UctSearch(stateRepresentation, numSimulations, explorationBias,
           discountRate, maxDepth, numInitialVisits, evaluator);
     }
 
@@ -72,7 +68,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
      *     best action from the root node. Default value: 100000.
      * @return this.
      */
-    public Builder<A> setNumSimulations(int numSimulations) {
+    public Builder setNumSimulations(int numSimulations) {
       this.numSimulations = numSimulations;
       return this;
     }
@@ -84,7 +80,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
      *     {@link UctSearch#UNIT_EXPLORATION_BIAS}.
      * @return this.
      */
-    public Builder<A> setExplorationBias(double explorationBias) {
+    public Builder setExplorationBias(double explorationBias) {
       this.explorationBias = explorationBias;
       return this;
     }
@@ -97,7 +93,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
      *     infinite reward cycles, etc. Default value: 1.0 (no discounting).
      * @return this.
      */
-    public Builder<A> setDiscountRate(double discountRate) {
+    public Builder setDiscountRate(double discountRate) {
       this.discountRate = discountRate;
       return this;
     }
@@ -107,7 +103,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
      *     Default value: 50.
      * @return this.
      */
-    public Builder<A> setMaxDepth(int maxDepth) {
+    public Builder setMaxDepth(int maxDepth) {
       this.maxDepth = maxDepth;
       return this;
     }
@@ -118,7 +114,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
      *     saves memory. Default value: 0.
      * @return this.
      */
-    public Builder<A> setNumInitialVisits(int numInitialVisits) {
+    public Builder setNumInitialVisits(int numInitialVisits) {
       this.numInitialVisits = numInitialVisits;
       return this;
     }
@@ -129,7 +125,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
      *     wins, and 0 for all other states.
      * @return this.
      */
-    public Builder<A> setEvaluator(Evaluator<A> evaluator) {
+    public Builder setEvaluator(Evaluator evaluator) {
       this.evaluator = evaluator;
       return this;
     }
@@ -139,48 +135,22 @@ public class UctSearch<A extends Action> implements Agent<A> {
    * @param stateRepresentation State representation to employ.
    * @return A new builder for UctSearch agents.
    */
-  public static <A extends Action> Builder<A> builder(State<A> stateRepresentation) {
-    return new Builder<A>(stateRepresentation);
-  }
-  
-  /**
-   * Associates positions in the game tree with how many times they have been
-   * visited and the total rewards obtained from being in that state in
-   * simulations.
-   */
-  private static class ActionData {
-    private final int numVisits;
-    private final double totalRewards;
-    
-    private ActionData() {
-      this(0, 0.0);
-    }
-    
-    private ActionData(int numVisits, double totalRewards) {
-      this.numVisits = numVisits;
-      this.totalRewards = totalRewards;
-    }
-
-    private int getNumVisits() {
-      return numVisits;
-    }
-
-    private double getTotalRewards() {
-      return totalRewards;
-    }
+  public static Builder builder(State stateRepresentation) {
+    return new Builder(stateRepresentation);
   }
 
-  private final State<A> stateRepresentation;
+  private final State stateRepresentation;
   private final int numSimulations;
   private final double explorationBias;
   private final double discountRate;
   private final int maxDepth;
   private final int numInitialVisits;
-  private final Evaluator<A> evaluator;  
+  private final Evaluator evaluator;  
+  private double lastActionReward;
   private final Random random = new Random();
   
-  private UctSearch(State<A> stateRepresentation, int numSimulations, double explorationBias,
-      double discountRate, int maxDepth, int numInitialVisits, Evaluator<A> evaluator) {
+  private UctSearch(State stateRepresentation, int numSimulations, double explorationBias,
+      double discountRate, int maxDepth, int numInitialVisits, Evaluator evaluator) {
     this.stateRepresentation = stateRepresentation;
     this.numSimulations = numSimulations;
     this.explorationBias = explorationBias;
@@ -194,29 +164,36 @@ public class UctSearch<A extends Action> implements Agent<A> {
    * {@inheritDoc} 
    */
   @Override
-  public ActionScore<A> pickAction(Player player, State<A> root) {
-    ActionTree<A, ActionData> actionTree = new ActionTree<A, ActionData>(new ActionData());
+  public long pickAction(int player, State root) {
+    ActionTree actionTree = new ActionTree();
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(actionTree, player, root.copy(), 0);
     }
     double bestPayoff = Double.NEGATIVE_INFINITY;
-    A bestAction = null;
-    for (A action : root.getActions()) {
-      ActionTree<A, ActionData> child = actionTree.child(action);
+    long bestAction = -1;
+    TLongList actions = root.getActions();
+    for (int i = 0; i < actions.size(); ++i) {
+      ActionTree child = actionTree.child(actions.get(i));
       double estimatedPayoff = averageReward(child);
       if (estimatedPayoff > bestPayoff) {
         bestPayoff = estimatedPayoff;
-        bestAction = action;
+        bestAction = actions.get(i);
       }
     }
-    return new ActionScore<A>(bestPayoff, bestAction);
+    lastActionReward = bestPayoff;
+    return bestAction;
+  }
+  
+  @Override
+  public double getScoreForLastAction() {
+    return lastActionReward;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public State<A> getStateRepresentation() {
+  public State getStateRepresentation() {
     return stateRepresentation;
   }
   
@@ -231,19 +208,19 @@ public class UctSearch<A extends Action> implements Agent<A> {
    * @param depth The current depth in the search tree.
    * @return The heuristic value of being in this state. 
    */
-  private double runSimulation(ActionTree<A, ActionData> actionTree, Player player, State<A> state,
+  private double runSimulation(ActionTree actionTree, int player, State state,
       int depth) {
     if (depth > maxDepth || state.isTerminal()) {
       double reward = -evaluator.evaluate(player, state);
       updateTree(actionTree, reward);
       return reward;
     }
-    if (actionTree.getValue().getNumVisits() < numInitialVisits) {
+    if (actionTree.getNumVisits() < numInitialVisits) {
       double reward = -playRandomGame(player, state, depth + 1);
       updateTree(actionTree, reward);
       return reward;
     } else {
-      A action = uctSelectAction(actionTree, state);
+      long action = uctSelectAction(actionTree, state);
       state.perform(action);
       final double reward = discountRate *
           -runSimulation(actionTree.child(action), state.getCurrentPlayer(), state, depth + 1);
@@ -252,11 +229,11 @@ public class UctSearch<A extends Action> implements Agent<A> {
     }
   }
   
-  private double playRandomGame(Player player, State<A> state, int depth) {
+  private double playRandomGame(int player, State state, int depth) {
     if (depth > maxDepth || state.isTerminal()) {
       return evaluator.evaluate(player, state);
     }    
-    A action = randomAction(state);
+    long action = randomAction(state);
     state.perform(action);
     return playRandomGame(player, state, depth + 1);   
   }
@@ -265,7 +242,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
    * @param state The current game state.
    * @return A random action possible from this state.
    */
-  private A randomAction(State<A> state) {
+  private long randomAction(State state) {
     return state.getActions().get(random.nextInt(state.getActions().size()));
   }
   
@@ -277,13 +254,9 @@ public class UctSearch<A extends Action> implements Agent<A> {
    *     position.
    * @param reward The reward associated with this position.
    */
-  private void updateTree(ActionTree<A, ActionData> actionTree, final double reward) {
-    actionTree.mutate(new Mutator<ActionData>() {
-      @Override
-      public ActionData mutate(ActionData value) {
-        return new ActionData(value.getNumVisits() + 1, value.getTotalRewards() + reward);
-      }
-    });
+  private void updateTree(ActionTree actionTree, final double reward) {;
+    actionTree.incrementNumVisits();
+    actionTree.addReward(reward);
   }
 
   /**
@@ -294,22 +267,22 @@ public class UctSearch<A extends Action> implements Agent<A> {
    * @param state The current state.
    * @return The action to take.
    */
-  private A uctSelectAction(ActionTree<A, ActionData> actionTree, State<A> state) {
+  private long uctSelectAction(ActionTree actionTree, State state) {
     // We iterate through each action and return the one that maximizes
     // uctValue.
     double maximum = Double.NEGATIVE_INFINITY;
-    A result = null;
-    for (A action : state.getActions()) {
-      ActionTree<A, ActionData> child = actionTree.child(action);
+    long result = -1;
+    TLongList actions = state.getActions();
+    for (int i = 0 ; i < actions.size(); ++i) {
+      ActionTree child = actionTree.child(actions.get(i));
       double uctValue = averageReward(child) +
-          explorationBias(actionTree.getValue().getNumVisits(),
-              child.getValue().getNumVisits());
+          explorationBias(actionTree.getNumVisits(), child.getNumVisits());
       // We multiply the result by 1000000 and then add a random double from
       // the interval [0,1] in order to break ties.
       uctValue = (uctValue * 1000000) + random.nextDouble();
       if (uctValue > maximum) {
         maximum = uctValue;
-        result = action;
+        result = actions.get(i);
       }
     }
     return result;
@@ -321,12 +294,12 @@ public class UctSearch<A extends Action> implements Agent<A> {
    * @return The average reward of visiting this state, or 0 if this state has
    *     never been visited before;
    */
-  private double averageReward(ActionTree<A, ActionData> actionTree) {
-    int numVisits = actionTree.getValue().getNumVisits();
+  private double averageReward(ActionTree actionTree) {
+    int numVisits = actionTree.getNumVisits();
     if (numVisits == 0) {
       return 0;
     } else {
-      return actionTree.getValue().getTotalRewards() / numVisits;
+      return actionTree.getTotalReward() / numVisits;
     }
   }
 
@@ -347,8 +320,8 @@ public class UctSearch<A extends Action> implements Agent<A> {
     if (visitsToState == 0 || visitsToAction == 0) {
       return 1000000000.0;
     }
-    return 2.0 * explorationBias *
-        Math.sqrt(Math.log(visitsToState) / visitsToAction);
+    return (2.0 * explorationBias *
+        Math.sqrt(Math.log(visitsToState) / visitsToAction));
   }
 
   @Override

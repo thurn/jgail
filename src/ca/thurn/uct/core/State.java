@@ -1,6 +1,7 @@
 package ca.thurn.uct.core;
 
-import java.util.List;
+import gnu.trove.list.TLongList;
+
 
 /**
  * Represents any given state of a given game. A state is responsible for
@@ -13,12 +14,12 @@ import java.util.List;
  * 
  * @param <A> The type of actions possible in this game.
  */
-public interface State<A extends Action> {
+public interface State {
   
   /**
    * @return All of the actions which are currently possible from this state.
    */
-  public List<A> getActions();
+  public TLongList getActions();
   
   /**
    * Performs the provided action by mutating the state. You should assume that
@@ -27,7 +28,7 @@ public interface State<A extends Action> {
    * 
    * @param action The action to perform.
    */
-  public void perform(A action);
+  public void perform(long action);
   
   /**
    * Undoes the provided action by mutating the state back to the way that it
@@ -36,19 +37,19 @@ public interface State<A extends Action> {
    * 
    * @param action The action to undo.
    */
-  public void undo(A action);
+  public void undo(long action);
   
   /**
    * Put this state in the starting condition for the game, the state before
    * any actions have been taken.
    * @return this 
    */
-  public State<A> setToStartingConditions();
+  public State setToStartingConditions();
   
   /**
    * @return A complete copy of this state.
    */
-  public State<A> copy();
+  public State copy();
   
   /**
    * Mutates this state to be a copy of the provided state. This method should
@@ -61,7 +62,7 @@ public interface State<A extends Action> {
    * @param state The state to initialize this state from.
    * @return this.
    */
-  public State<A> initialize(State<A> state);
+  public State initialize(State state);
   
   /**
    * @return True if there are no more actions possible from this state (the
@@ -73,24 +74,24 @@ public interface State<A extends Action> {
    * @return The Player who won the game in this state. If there is no
    *     winner (the game is a draw, not yet over, etc), returns null.
    */
-  public Player getWinner();
+  public int getWinner();
 
   /**
    * @return The Player whose turn it is in this state.
    */
-  public Player getCurrentPlayer();
+  public int getCurrentPlayer();
   
   /**
    * @param player A player.
    * @return The player who will follow the provided player in the game's turn
    *     sequence.
    */
-  public Player playerAfter(Player player);
+  public int playerAfter(int player);
   
   /**
    * @param player A player.
    * @return The player who is before the provided player in the game's turn
    *     sequence.
    */
-  public Player playerBefore(Player player);
+  public int playerBefore(int player);
 }

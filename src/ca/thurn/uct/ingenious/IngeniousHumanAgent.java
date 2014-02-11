@@ -2,31 +2,29 @@ package ca.thurn.uct.ingenious;
 
 import java.util.Scanner;
 
-import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.Agent;
-import ca.thurn.uct.core.Player;
 import ca.thurn.uct.core.State;
 
 /**
  * Human agent for Ingenious.
  */
-public class IngeniousHumanAgent implements Agent<IngeniousAction> {
+public class IngeniousHumanAgent implements Agent {
 
   private Scanner in = new Scanner(System.in);  
   
-  private final State<IngeniousAction> stateRepresentation;
+  private final State stateRepresentation;
   
   /**
    * @param stateRepresentation A state representation which will be totally
    *     ignored.
    */
-  public IngeniousHumanAgent(State<IngeniousAction> stateRepresentation) {
+  public IngeniousHumanAgent(State stateRepresentation) {
     this.stateRepresentation = stateRepresentation;
   }
   
-  public ActionScore<IngeniousAction> pickAction(Player player, State<IngeniousAction> rootNode) {
+  public long pickAction(int player, State rootNode) {
     IngeniousState state = (IngeniousState)rootNode;
-    IngeniousPiece piece = null;
+    int piece;
     int index, x1, y1, x2, y2;
     while (true) {
       System.out.println("Select a piece [0,5]");
@@ -50,13 +48,16 @@ public class IngeniousHumanAgent implements Agent<IngeniousAction> {
       }
       System.out.println("Invalid action selection!");      
     }
-    return new ActionScore<IngeniousAction>(new IngeniousAction(piece, x1, y1, x2, y2));
+    return IngeniousAction.create(piece, x1, y1, x2, y2);
   }
 
   @Override
-  public State<IngeniousAction> getStateRepresentation() {
+  public State getStateRepresentation() {
     return stateRepresentation;
   }
 
-
+  @Override
+  public double getScoreForLastAction() {
+    return 0;
+  }
 }

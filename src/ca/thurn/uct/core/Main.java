@@ -11,11 +11,11 @@ import java.util.Random;
  * A helper class for running games & sets of games between multiple Agents.
  * @param <A> Action type to use.
  */
-public class Main<A extends Action> {
-  private final List<Agent<A>> agents;
-  private final State<A> initialState;
+public class Main {
+  private final List<Agent> agents;
+  private final State initialState;
   private final Random random = new Random();
-  private State<A> canonicalState;  
+  private State canonicalState;  
 
   /**
    * Constructs a new Main instance.
@@ -27,7 +27,7 @@ public class Main<A extends Action> {
    *     the responsibility of the caller to ensure that this state is in the
    *     appropriate initial state for this game.
    */
-  public Main(List<Agent<A>> agents, State<A> canonicalState) {
+  public Main(List<Agent> agents, State canonicalState) {
     this.agents = agents;
     this.initialState = canonicalState;
   }
@@ -44,7 +44,7 @@ public class Main<A extends Action> {
     int draws = 0;
 
     for (int i = 0; i < tournamentSize; ++i) {
-      Map<Player, Agent<A>> agentMap = new HashMap<Player, Agent<A>>();
+      Map<Integer, Agent> agentMap = new HashMap<Integer, Agent>();
       int black = random.nextInt(agents.size());
       int red = random.nextInt(agents.size());
       while (red == black) {
@@ -52,13 +52,13 @@ public class Main<A extends Action> {
       }
       agentMap.put(Player.PLAYER_ONE, agents.get(black));
       agentMap.put(Player.PLAYER_TWO, agents.get(red));
-      Player winner = playGame(agentMap, false /* isInteractive */);
+      int winner = playGame(agentMap, false /* isInteractive */);
       System.out.print(".");
       if (winner == Player.PLAYER_ONE) {
         wins[black]++;
       } else if (winner == Player.PLAYER_TWO) {
         wins[red]++;
-      } else if (winner == null) {
+      } else if (winner == 0) {
         draws++;
       }
       
@@ -82,11 +82,11 @@ public class Main<A extends Action> {
    * current game state between each move.
    */
   public void runMatch() {
-    Map<Player, Agent<A>> agentMap = new HashMap<Player, Agent<A>>();
+    Map<Integer, Agent> agentMap = new HashMap<Integer, Agent>();
     agentMap.put(Player.PLAYER_ONE, agents.get(0));
     agentMap.put(Player.PLAYER_TWO, agents.get(1));
-    Player winner = playGame(agentMap, true /* isInteractive */);
-    if (winner != null) {
+    int winner = playGame(agentMap, true /* isInteractive */);
+    if (winner != 0) {
       System.out.println(agentMap.get(winner) + " wins!");
     } else {
       System.out.println("Game drawn.");
@@ -103,15 +103,15 @@ public class Main<A extends Action> {
    * @return The winner of the game as defined by the canonical state's
    *     {@link State#getWinner()} method.
    */
-  private Player playGame(Map<Player, Agent<A>> agentMap, boolean isInteractive) {
+  private int playGame(Map<Integer, Agent> agentMap, boolean isInteractive) {
     canonicalState = initialState.copy();
     while (!canonicalState.isTerminal()) {
       if (isInteractive) {
         System.out.println(canonicalState);
       }
-      Agent<A> agent = agentMap.get(canonicalState.getCurrentPlayer());
-      A action = agent.pickAction(canonicalState.getCurrentPlayer(),
-          agent.getStateRepresentation().initialize(canonicalState)).getAction();
+      Agent agent = agentMap.get(canonicalState.getCurrentPlayer());
+      long action = agent.pickAction(canonicalState.getCurrentPlayer(),
+          agent.getStateRepresentation().initialize(canonicalState));
       if (isInteractive) {
         System.out.println(agent + " picked action " + action);
       }
@@ -120,8 +120,7 @@ public class Main<A extends Action> {
     if (isInteractive) {
       System.out.println(canonicalState);
     }
-    Player winner = canonicalState.getWinner();
-    return winner;
+    return canonicalState.getWinner();
   }
   
   /**
