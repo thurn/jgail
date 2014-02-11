@@ -19,7 +19,7 @@ public class FastUctSearch implements FastAgent {
     * This exploration bias value, 1/sqrt(2), was shown by Kocsis and
     * Szepesvari to work well if rewards are in the range [0,1]. 
    */
-  public static double UNIT_EXPLORATION_BIAS = 0.70710678f;
+  public static double UNIT_EXPLORATION_BIAS = 0.70710678;
   
   /**
    * Builder for UctSearch agents.
@@ -33,7 +33,7 @@ public class FastUctSearch implements FastAgent {
   
     private double explorationBias = UNIT_EXPLORATION_BIAS;
 
-    private double discountRate = 1.0f;
+    private double discountRate = 1.0;
     
     private int maxDepth = 50;
     
@@ -42,7 +42,7 @@ public class FastUctSearch implements FastAgent {
     private FastEvaluator evaluator = new FastEvaluator() {
       @Override
       public double evaluate(int player, FastState state) {
-        return state.getWinner() == player ? 1.0f : -1.0f;
+        return state.getWinner() == player ? 1.0 : -1.0;
       }
     };
     
@@ -318,9 +318,9 @@ public class FastUctSearch implements FastAgent {
     // We return 1000000000 if we've never visited this state or action before
     // in order to prioritize nodes we have not yet explored.
     if (visitsToState == 0 || visitsToAction == 0) {
-      return 1000000000.0f;
+      return 1000000000.0;
     }
-    return (2.0f * explorationBias *
+    return (2.0 * explorationBias *
         Math.sqrt(Math.log(visitsToState) / visitsToAction));
   }
 

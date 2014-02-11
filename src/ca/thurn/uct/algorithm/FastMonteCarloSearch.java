@@ -35,7 +35,7 @@ public class FastMonteCarloSearch implements FastAgent {
     private FastEvaluator evaluator = new FastEvaluator() {
       @Override
       public double evaluate(int player, FastState state) {
-        return state.getWinner() == player ? 1.0f : -1.0f;
+        return state.getWinner() == player ? 1.0 : -1.0;
       }
     };
     
