@@ -22,7 +22,7 @@ public interface FastAgent {
    */
   public long pickAction(int player, FastState rootNode);
   
-  public float getScoreForLastAction();
+  public double getScoreForLastAction();
   
   /**
    * @return A null-initialized state object

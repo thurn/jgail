@@ -39,7 +39,7 @@ public class FastIngeniousState implements FastState {
   public FastIngeniousState() {
   }
 
-  private FastIngeniousState(TLongList actions, int[][] board,
+  FastIngeniousState(TLongList actions, int[][] board,
       int currentPlayer, TIntList p1Hand, TIntList p2Hand,
       TIntIntMap p1Score, TIntIntMap p2Score) {
     this.actions = actions;
@@ -92,6 +92,10 @@ public class FastIngeniousState implements FastState {
 
     currentPlayer = playerAfter(currentPlayer);
     actions = allActions(handForPlayer(currentPlayer));
+    
+    if (p1Hand.size() > 6 || p2Hand.size() > 6) {
+      throw new RuntimeException();
+    }
   }
   
   private TIntIntMap scoresForPlayer(int player) {
@@ -154,6 +158,9 @@ public class FastIngeniousState implements FastState {
     this.p2Hand = copy.p2Hand;
     this.p1Score = copy.p1Score;
     this.p2Score = copy.p2Score;
+    if (p1Hand.size() > 6 || p2Hand.size() > 6) {
+      throw new RuntimeException();
+    }    
     return this;
   }
 
@@ -207,7 +214,7 @@ public class FastIngeniousState implements FastState {
       }
     }
     
-    return FastPlayer.NO_WINNER;
+    return 0;
   }
   
   /**

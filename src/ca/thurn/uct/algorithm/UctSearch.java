@@ -238,7 +238,7 @@ public class UctSearch<A extends Action> implements Agent<A> {
       updateTree(actionTree, reward);
       return reward;
     }
-    if (actionTree.getValue().getNumVisits() <= numInitialVisits) {
+    if (actionTree.getValue().getNumVisits() < numInitialVisits) {
       double reward = -playRandomGame(player, state, depth + 1);
       updateTree(actionTree, reward);
       return reward;

@@ -14,6 +14,7 @@ public enum IngeniousHex {
   BLUE,
   OFF_BOARD;
   
+  private static final boolean USE_COLOR = true;
   private static final String ANSI_RESET = "\u001B[0m";
   private static final String ANSI_RED = "\u001B[31m";
   private static final String ANSI_GREEN = "\u001B[32m";
@@ -32,25 +33,46 @@ public enum IngeniousHex {
   public static IngeniousHex[] allColors() {
     return values;
   }
-  
+
   public String toString() {
-    switch(this) {
-      case BLUE:
-        return ANSI_BLUE + "BB" + ANSI_RESET;
-      case GREEN:
-        return ANSI_GREEN + "GG" + ANSI_RESET;
-      case ORANGE:
-        return ANSI_CYAN + "OO" + ANSI_RESET;
-      case PURPLE:
-        return ANSI_PURPLE + "PP" + ANSI_RESET;
-      case RED:
-        return ANSI_RED + "RR" + ANSI_RESET;
-      case YELLOW:
-        return ANSI_YELLOW + "YY" + ANSI_RESET;
-      case OFF_BOARD:
-        return "";
-      default:
-        throw new RuntimeException();
-    }       
+    if (USE_COLOR) {
+      switch(this) {
+        case BLUE:
+          return ANSI_BLUE + "BB" + ANSI_RESET;
+        case GREEN:
+          return ANSI_GREEN + "GG" + ANSI_RESET;
+        case ORANGE:
+          return ANSI_CYAN + "OO" + ANSI_RESET;
+        case PURPLE:
+          return ANSI_PURPLE + "PP" + ANSI_RESET;
+        case RED:
+          return ANSI_RED + "RR" + ANSI_RESET;
+        case YELLOW:
+          return ANSI_YELLOW + "YY" + ANSI_RESET;
+        case OFF_BOARD:
+          return "";
+        default:
+          throw new RuntimeException();   
+      }
+    } else {
+      switch(this) {
+        case BLUE:
+          return "BB";
+        case GREEN:
+          return "GG";
+        case ORANGE:
+          return "OO";
+        case PURPLE:
+          return "PP";
+        case RED:
+          return "RR";
+        case YELLOW:
+          return "YY";
+        case OFF_BOARD:
+          return "";
+        default:
+          throw new RuntimeException();
+      }    
+    }
   }
 }

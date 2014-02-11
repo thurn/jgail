@@ -1,7 +1,7 @@
 package ca.thurn.uct.core;
 
-import gnu.trove.map.TLongObjectMap;
-import gnu.trove.map.hash.TLongObjectHashMap;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A class designed to associate positions in the game tree with values.
@@ -11,21 +11,9 @@ import gnu.trove.map.hash.TLongObjectHashMap;
  */
 public class FastActionTree {
   
-  /**
-   * Interface to allow mutating values in the tree. 
-   */
-  public static interface Mutator {
-    /**
-     * Mutates the provided tree as desired, writing the new value to the tree.
-     *
-     * @param tree The current value in the tree.
-     * @return The new value to store in this position in the tree.
-     */
-    public long mutate(long value);
-  }
-  
-  private final TLongObjectMap<FastActionTree> children;
-  private long value;
+  private final Map<Long, FastActionTree> children;
+  private int numVisits;
+  private double totalReward;
   
   /**
    * Constructs a new ActionTree root node.
@@ -34,7 +22,7 @@ public class FastActionTree {
    *     tree nodes.
    */
   public FastActionTree() {
-    this.children = new TLongObjectHashMap<FastActionTree>();
+    this.children = new HashMap<Long, FastActionTree>();
   }
   
   /**
@@ -55,19 +43,19 @@ public class FastActionTree {
     return result;
   }
   
-  /**
-   * Mutate the value at the current position in the tree.
-   *
-   * @param mutator Mutator to employ.
-   */
-  public void mutate(Mutator mutator) {
-    this.value = mutator.mutate(value);
+  public void incrementNumVisits() {
+    numVisits++;
   }
-
-  /**
-   * @return The value currently stored at this position in the tree. 
-   */
-  public long getValue() {
-    return value;
+  
+  public void addReward(double reward) {
+    totalReward += reward;
+  }
+  
+  public int getNumVisits() {
+    return numVisits;
+  }
+  
+  public double getTotalReward() {
+    return totalReward;
   }
 }

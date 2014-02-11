@@ -24,11 +24,11 @@ public class IngeniousState implements State<IngeniousAction> {
   }
   
   // 11x11 board using the axial coordinate system
-  private List<IngeniousAction> actions;
-  private IngeniousHex[][] board;
-  private Player currentPlayer;
-  private Map<Player, List<IngeniousPiece>> hands;
-  private Map<Player, Map<IngeniousHex, Integer>> scores;
+  List<IngeniousAction> actions;
+  IngeniousHex[][] board;
+  Player currentPlayer;
+  Map<Player, List<IngeniousPiece>> hands;
+  Map<Player, Map<IngeniousHex, Integer>> scores;
   
   /**
    * Null-initializing constructor.
@@ -83,6 +83,9 @@ public class IngeniousState implements State<IngeniousAction> {
 
     currentPlayer = playerAfter(currentPlayer);
     actions = allActions(hands.get(currentPlayer));
+    if (hands.get(Player.PLAYER_ONE).size() > 6 || hands.get(Player.PLAYER_TWO).size() > 6) {
+      throw new RuntimeException();
+    }    
   }
 
   /**
@@ -149,6 +152,9 @@ public class IngeniousState implements State<IngeniousAction> {
     this.currentPlayer = copy.currentPlayer;
     this.hands = copy.hands;
     this.scores = copy.scores;
+    if (hands.get(Player.PLAYER_ONE).size() > 6 || hands.get(Player.PLAYER_TWO).size() > 6) {
+      throw new RuntimeException();
+    }   
     return this;
   }
 

@@ -5,7 +5,6 @@ import gnu.trove.list.TLongList;
 import java.util.Random;
 
 import ca.thurn.uct.core.FastActionTree;
-import ca.thurn.uct.core.FastActionTree.Mutator;
 import ca.thurn.uct.core.FastAgent;
 import ca.thurn.uct.core.FastEvaluator;
 import ca.thurn.uct.core.FastState;
@@ -20,7 +19,7 @@ public class FastUctSearch implements FastAgent {
     * This exploration bias value, 1/sqrt(2), was shown by Kocsis and
     * Szepesvari to work well if rewards are in the range [0,1]. 
    */
-  public static float UNIT_EXPLORATION_BIAS = 0.70710678f;
+  public static double UNIT_EXPLORATION_BIAS = 0.70710678f;
   
   /**
    * Builder for UctSearch agents.
@@ -32,9 +31,9 @@ public class FastUctSearch implements FastAgent {
     
     private int numSimulations = 100000;
   
-    private float explorationBias = UNIT_EXPLORATION_BIAS;
+    private double explorationBias = UNIT_EXPLORATION_BIAS;
 
-    private float discountRate = 1.0f;
+    private double discountRate = 1.0f;
     
     private int maxDepth = 50;
     
@@ -42,7 +41,7 @@ public class FastUctSearch implements FastAgent {
     
     private FastEvaluator evaluator = new FastEvaluator() {
       @Override
-      public float evaluate(int player, FastState state) {
+      public double evaluate(int player, FastState state) {
         return state.getWinner() == player ? 1.0f : -1.0f;
       }
     };
@@ -81,7 +80,7 @@ public class FastUctSearch implements FastAgent {
      *     {@link FastUctSearch#UNIT_EXPLORATION_BIAS}.
      * @return this.
      */
-    public Builder setExplorationBias(float explorationBias) {
+    public Builder setExplorationBias(double explorationBias) {
       this.explorationBias = explorationBias;
       return this;
     }
@@ -94,7 +93,7 @@ public class FastUctSearch implements FastAgent {
      *     infinite reward cycles, etc. Default value: 1.0 (no discounting).
      * @return this.
      */
-    public Builder setDiscountRate(float discountRate) {
+    public Builder setDiscountRate(double discountRate) {
       this.discountRate = discountRate;
       return this;
     }
@@ -139,38 +138,19 @@ public class FastUctSearch implements FastAgent {
   public static Builder builder(FastState stateRepresentation) {
     return new Builder(stateRepresentation);
   }
-  
-  /**
-   * Associates positions in the game tree with how many times they have been
-   * visited and the total rewards obtained from being in that state in
-   * simulations.
-   */
-  private static class ActionData {
-    private static long create(int numVisits, float totalRewards) {
-      return (numVisits << 32) | (long)(Float.floatToIntBits(totalRewards));
-    }
-
-    private static int getNumVisits(long value) {
-      return (int) (value >> 32);
-    }
-
-    private static float getTotalRewards(long value) {
-      return Float.intBitsToFloat((int)(value & 0xFFFF));
-    }
-  }
 
   private final FastState stateRepresentation;
   private final int numSimulations;
-  private final float explorationBias;
-  private final float discountRate;
+  private final double explorationBias;
+  private final double discountRate;
   private final int maxDepth;
   private final int numInitialVisits;
   private final FastEvaluator evaluator;  
-  private float lastActionReward;
+  private double lastActionReward;
   private final Random random = new Random();
   
-  private FastUctSearch(FastState stateRepresentation, int numSimulations, float explorationBias,
-      float discountRate, int maxDepth, int numInitialVisits, FastEvaluator evaluator) {
+  private FastUctSearch(FastState stateRepresentation, int numSimulations, double explorationBias,
+      double discountRate, int maxDepth, int numInitialVisits, FastEvaluator evaluator) {
     this.stateRepresentation = stateRepresentation;
     this.numSimulations = numSimulations;
     this.explorationBias = explorationBias;
@@ -189,12 +169,12 @@ public class FastUctSearch implements FastAgent {
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(actionTree, player, root.copy(), 0);
     }
-    float bestPayoff = Float.NEGATIVE_INFINITY;
+    double bestPayoff = Double.NEGATIVE_INFINITY;
     long bestAction = -1;
     TLongList actions = root.getActions();
     for (int i = 0; i < actions.size(); ++i) {
       FastActionTree child = actionTree.child(actions.get(i));
-      float estimatedPayoff = averageReward(child);
+      double estimatedPayoff = averageReward(child);
       if (estimatedPayoff > bestPayoff) {
         bestPayoff = estimatedPayoff;
         bestAction = actions.get(i);
@@ -205,7 +185,7 @@ public class FastUctSearch implements FastAgent {
   }
   
   @Override
-  public float getScoreForLastAction() {
+  public double getScoreForLastAction() {
     return lastActionReward;
   }
 
@@ -228,28 +208,28 @@ public class FastUctSearch implements FastAgent {
    * @param depth The current depth in the search tree.
    * @return The heuristic value of being in this state. 
    */
-  private float runSimulation(FastActionTree actionTree, int player, FastState state,
+  private double runSimulation(FastActionTree actionTree, int player, FastState state,
       int depth) {
     if (depth > maxDepth || state.isTerminal()) {
-      float reward = -evaluator.evaluate(player, state);
+      double reward = -evaluator.evaluate(player, state);
       updateTree(actionTree, reward);
       return reward;
     }
-    if (ActionData.getNumVisits(actionTree.getValue()) <= numInitialVisits) {
-      float reward = -playRandomGame(player, state, depth + 1);
+    if (actionTree.getNumVisits() < numInitialVisits) {
+      double reward = -playRandomGame(player, state, depth + 1);
       updateTree(actionTree, reward);
       return reward;
     } else {
       long action = uctSelectAction(actionTree, state);
       state.perform(action);
-      final float reward = discountRate *
+      final double reward = discountRate *
           -runSimulation(actionTree.child(action), state.getCurrentPlayer(), state, depth + 1);
       updateTree(actionTree, reward);
       return reward;      
     }
   }
   
-  private float playRandomGame(int player, FastState state, int depth) {
+  private double playRandomGame(int player, FastState state, int depth) {
     if (depth > maxDepth || state.isTerminal()) {
       return evaluator.evaluate(player, state);
     }    
@@ -274,15 +254,9 @@ public class FastUctSearch implements FastAgent {
    *     position.
    * @param reward The reward associated with this position.
    */
-  private void updateTree(FastActionTree actionTree, final float reward) {
-    actionTree.mutate(new Mutator() {
-      @Override
-      public long mutate(long value) {
-        float totalReward = ActionData.getTotalRewards(value) + reward;
-        int numVisits = ActionData.getNumVisits(value) + 1;
-        return ActionData.create(numVisits, totalReward);
-      }
-    });
+  private void updateTree(FastActionTree actionTree, final double reward) {;
+    actionTree.incrementNumVisits();
+    actionTree.addReward(reward);
   }
 
   /**
@@ -296,17 +270,16 @@ public class FastUctSearch implements FastAgent {
   private long uctSelectAction(FastActionTree actionTree, FastState state) {
     // We iterate through each action and return the one that maximizes
     // uctValue.
-    float maximum = Float.NEGATIVE_INFINITY;
+    double maximum = Double.NEGATIVE_INFINITY;
     long result = -1;
     TLongList actions = state.getActions();
     for (int i = 0 ; i < actions.size(); ++i) {
       FastActionTree child = actionTree.child(actions.get(i));
-      float uctValue = averageReward(child) +
-          explorationBias(ActionData.getNumVisits(actionTree.getValue()),
-              ActionData.getNumVisits(child.getValue()));
-      // We multiply the result by 1000000 and then add a random float from
+      double uctValue = averageReward(child) +
+          explorationBias(actionTree.getNumVisits(), child.getNumVisits());
+      // We multiply the result by 1000000 and then add a random double from
       // the interval [0,1] in order to break ties.
-      uctValue = (uctValue * 1000000) + random.nextFloat();
+      uctValue = (uctValue * 1000000) + random.nextDouble();
       if (uctValue > maximum) {
         maximum = uctValue;
         result = actions.get(i);
@@ -321,12 +294,12 @@ public class FastUctSearch implements FastAgent {
    * @return The average reward of visiting this state, or 0 if this state has
    *     never been visited before;
    */
-  private float averageReward(FastActionTree actionTree) {
-    int numVisits = ActionData.getNumVisits(actionTree.getValue());
+  private double averageReward(FastActionTree actionTree) {
+    int numVisits = actionTree.getNumVisits();
     if (numVisits == 0) {
       return 0;
     } else {
-      return ActionData.getTotalRewards(actionTree.getValue()) / numVisits;
+      return actionTree.getTotalReward() / numVisits;
     }
   }
 
@@ -341,13 +314,13 @@ public class FastUctSearch implements FastAgent {
    *     action has been visited.
    * @return The exploration bias.
    */
-  private float explorationBias(int visitsToState, int visitsToAction) {
+  private double explorationBias(int visitsToState, int visitsToAction) {
     // We return 1000000000 if we've never visited this state or action before
     // in order to prioritize nodes we have not yet explored.
     if (visitsToState == 0 || visitsToAction == 0) {
       return 1000000000.0f;
     }
-    return (float) (2.0f * explorationBias *
+    return (2.0f * explorationBias *
         Math.sqrt(Math.log(visitsToState) / visitsToAction));
   }
 

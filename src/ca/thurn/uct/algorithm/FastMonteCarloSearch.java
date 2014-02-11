@@ -34,7 +34,7 @@ public class FastMonteCarloSearch implements FastAgent {
     
     private FastEvaluator evaluator = new FastEvaluator() {
       @Override
-      public float evaluate(int player, FastState state) {
+      public double evaluate(int player, FastState state) {
         return state.getWinner() == player ? 1.0f : -1.0f;
       }
     };
@@ -91,8 +91,8 @@ public class FastMonteCarloSearch implements FastAgent {
   private final int maxDepth;
   private final FastEvaluator evaluator;  
   private final Random random = new Random();
-  private float lastActionReward;
-  private Map<Long, Float> actionRewards = new HashMap<Long, Float>(); 
+  private double lastActionReward;
+  private Map<Long, Double> actionRewards = new HashMap<Long, Double>(); 
   
   /**
    * Field-initializing constructor.
@@ -123,13 +123,13 @@ public class FastMonteCarloSearch implements FastAgent {
    */
   @Override
   public long pickAction(int player, FastState root) {
-    actionRewards = new HashMap<Long, Float>(); 
+    actionRewards = new HashMap<Long, Double>(); 
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(player, root.copy(), 0);
     }
-    float bestReward = Float.NEGATIVE_INFINITY;
+    double bestReward = Double.NEGATIVE_INFINITY;
     long bestAction = -1;
-    for (Map.Entry<Long, Float> entry : actionRewards.entrySet()) {
+    for (Map.Entry<Long, Double> entry : actionRewards.entrySet()) {
       if (entry.getValue() > bestReward) {
         bestReward = entry.getValue();
         bestAction = entry.getKey();
@@ -159,15 +159,15 @@ public class FastMonteCarloSearch implements FastAgent {
    * @param depth The depth in the search.
    * @return The reward associated with being at this state.
    */
-  private float runSimulation(int player, FastState state, int depth) {
+  private double runSimulation(int player, FastState state, int depth) {
     if (depth > maxDepth || state.isTerminal()) {
       return evaluator.evaluate(player, state);
     }
     long action = randomAction(state);
     state.perform(action);
-    float reward = runSimulation(player, state, depth + 1);
+    double reward = runSimulation(player, state, depth + 1);
     if (depth == 0) {
-      Float current = actionRewards.get(action);
+      Double current = actionRewards.get(action);
       actionRewards.put(action, current == null ? 0 : current + reward);
     }
     return reward;
@@ -182,7 +182,7 @@ public class FastMonteCarloSearch implements FastAgent {
   }
 
   @Override
-  public float getScoreForLastAction() {
+  public double getScoreForLastAction() {
     return lastActionReward;
   }
 }

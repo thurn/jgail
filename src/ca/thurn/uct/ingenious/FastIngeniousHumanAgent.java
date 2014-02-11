@@ -57,7 +57,7 @@ public class FastIngeniousHumanAgent implements FastAgent {
   }
 
   @Override
-  public float getScoreForLastAction() {
+  public double getScoreForLastAction() {
     return 0;
   }
 }

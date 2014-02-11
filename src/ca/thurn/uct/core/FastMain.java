@@ -58,7 +58,7 @@ public class FastMain {
         wins[black]++;
       } else if (winner == FastPlayer.PLAYER_TWO) {
         wins[red]++;
-      } else if (winner == FastPlayer.NO_WINNER) {
+      } else if (winner == 0) {
         draws++;
       }
       
@@ -86,7 +86,7 @@ public class FastMain {
     agentMap.put(FastPlayer.PLAYER_ONE, agents.get(0));
     agentMap.put(FastPlayer.PLAYER_TWO, agents.get(1));
     int winner = playGame(agentMap, true /* isInteractive */);
-    if (winner != FastPlayer.NO_WINNER) {
+    if (winner != 0) {
       System.out.println(agentMap.get(winner) + " wins!");
     } else {
       System.out.println("Game drawn.");

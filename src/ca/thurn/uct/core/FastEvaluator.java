@@ -13,5 +13,5 @@ public interface FastEvaluator {
    * @return A number which should be higher or lower if the provided state is
    *     correspondingly better or worse for the provided player.
    */
-  public float evaluate(int player, FastState state);
+  public double evaluate(int player, FastState state);
 }
