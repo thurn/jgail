@@ -2,6 +2,7 @@ package ca.thurn.uct.connect4;
 
 import java.util.Scanner;
 
+import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.State;
 
@@ -21,13 +22,19 @@ public class C4HumanAgent implements Agent {
     this.stateRepresentation = stateRepresentation;
   }
   
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public long pickAction(int player, State rootNode) {
+  public ActionScore pickAction(int player, State rootNode, long timeBudget) {
     System.out.println("Select a column [0,6]");
     int column = in.nextInt();
-    return C4Action.create(player, column);
+    return new ActionScore(C4Action.create(player, column), 0.0);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public State getStateRepresentation() {
     return stateRepresentation;
@@ -36,11 +43,6 @@ public class C4HumanAgent implements Agent {
   @Override
   public String toString() {
     return "Human";
-  }
-
-  @Override
-  public double getScoreForLastAction() {
-    return 0;
   }
 
 }

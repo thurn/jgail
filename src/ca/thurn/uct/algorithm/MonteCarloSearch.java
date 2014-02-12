@@ -2,24 +2,21 @@ package ca.thurn.uct.algorithm;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
+import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Evaluator;
 import ca.thurn.uct.core.State;
+import ca.thurn.uct.core.WinLossEvaluator;
 
 /**
  * An agent which picks actions by running repeated random simulations from
  * the current state and returning the one that had the best outcome.
- * 
- * @param <A> Action type to use.
  */
 public class MonteCarloSearch implements Agent {
   
   /**
-   * Builder for Monte Carlo Search.
-   *
-   * @param <A> Action type to use.
+   * Builder for MonteCarloSearch.
    */
   public static class Builder {
     private final State stateRepresentation;
@@ -32,12 +29,7 @@ public class MonteCarloSearch implements Agent {
       this.stateRepresentation = stateRepresentation;
     }
     
-    private Evaluator evaluator = new Evaluator() {
-      @Override
-      public double evaluate(int player, State state) {
-        return state.getWinner() == player ? 1.0 : -1.0;
-      }
-    };
+    private Evaluator evaluator = new WinLossEvaluator();
     
     /**
      * @return A new MonteCarloSearch instance.
@@ -68,8 +60,7 @@ public class MonteCarloSearch implements Agent {
 
     /**
      * @param evaluator Function to use to evaluate the heuristic value of a
-     *     terminal search node. Default value returns -1 for losses, 1 for
-     *     wins, and 0 for all other states.
+     *     terminal search node. Default value: {@link WinLossEvaluator}.
      * @return this.
      */
     public Builder setEvaluator(Evaluator evaluator) {
@@ -90,8 +81,7 @@ public class MonteCarloSearch implements Agent {
   private final int numSimulations;  
   private final int maxDepth;
   private final Evaluator evaluator;  
-  private final Random random = new Random();
-  private double lastActionReward;
+
   private Map<Long, Double> actionRewards = new HashMap<Long, Double>(); 
   
   /**
@@ -122,7 +112,7 @@ public class MonteCarloSearch implements Agent {
    * {@inheritDoc}
    */
   @Override
-  public long pickAction(int player, State root) {
+  public ActionScore pickAction(int player, State root, long timeBudget) {
     actionRewards = new HashMap<Long, Double>(); 
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(player, root.copy(), 0);
@@ -135,8 +125,7 @@ public class MonteCarloSearch implements Agent {
         bestAction = entry.getKey();
       }
     }
-    lastActionReward = bestReward;
-    return bestAction;
+    return new ActionScore(bestAction, bestReward);
   }
   
   @Override
@@ -163,7 +152,7 @@ public class MonteCarloSearch implements Agent {
     if (depth > maxDepth || state.isTerminal()) {
       return evaluator.evaluate(player, state);
     }
-    long action = randomAction(state);
+    long action = state.getRandomAction();
     state.perform(action);
     double reward = runSimulation(player, state, depth + 1);
     if (depth == 0) {
@@ -173,16 +162,4 @@ public class MonteCarloSearch implements Agent {
     return reward;
   }
 
-  /**
-   * @param state The current game state.
-   * @return A random action possible from this state.
-   */
-  private long randomAction(State state) {
-    return state.getActions().get(random.nextInt(state.getActions().size()));
-  }
-
-  @Override
-  public double getScoreForLastAction() {
-    return lastActionReward;
-  }
 }

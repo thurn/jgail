@@ -1,25 +1,27 @@
 package ca.thurn.uct.core;
 
-import gnu.trove.list.TLongList;
 
 
 /**
- * Represents any given state of a given game. A state is responsible for
+ * Represents the game state of a given game. A state is responsible for
  * tracking whose turn it is, what actions have been taken, and if anybody has
  * won. A good state will strive to implement the methods in its interface as
  * efficiently as possible, particularly ones like perform() and getWinner(),
  * since they will likely be called extremely frequently. States should usually
  * have only one public constructor: a zero-argument one which performs no
- * work and null-initializes the state. 
- * 
- * @param <A> The type of actions possible in this game.
+ * work and null-initializes the state.
  */
 public interface State {
   
   /**
    * @return All of the actions which are currently possible from this state.
    */
-  public TLongList getActions();
+  public Iterable<Long> getActions();
+  
+  /**
+   * @return A random action which is legal from this state.
+   */
+  public long getRandomAction();
   
   /**
    * Performs the provided action by mutating the state. You should assume that
@@ -27,8 +29,10 @@ public interface State {
    * {@link State#getActions()} to return only legal actions.
    * 
    * @param action The action to perform.
+   * @return An "undo token" which must be passed to
+   *     {@link State#undo(long, long)} in order to undo this action.
    */
-  public void perform(long action);
+  public long perform(long action);
   
   /**
    * Undoes the provided action by mutating the state back to the way that it
@@ -36,8 +40,10 @@ public interface State {
    * performed action as an argument.
    * 
    * @param action The action to undo.
+   * @param undoToken The undo token returned from
+   *     {@link State#undo(long, long)} when this action was performed.
    */
-  public void undo(long action);
+  public void undo(long action, long undoToken);
   
   /**
    * Put this state in the starting condition for the game, the state before

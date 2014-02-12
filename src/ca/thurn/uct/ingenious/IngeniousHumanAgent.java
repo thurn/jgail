@@ -2,6 +2,7 @@ package ca.thurn.uct.ingenious;
 
 import java.util.Scanner;
 
+import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.State;
 
@@ -22,7 +23,11 @@ public class IngeniousHumanAgent implements Agent {
     this.stateRepresentation = stateRepresentation;
   }
   
-  public long pickAction(int player, State rootNode) {
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public ActionScore pickAction(int player, State rootNode, long timeBudget) {
     IngeniousState state = (IngeniousState)rootNode;
     int piece;
     int index, x1, y1, x2, y2;
@@ -48,16 +53,14 @@ public class IngeniousHumanAgent implements Agent {
       }
       System.out.println("Invalid action selection!");      
     }
-    return IngeniousAction.create(piece, x1, y1, x2, y2);
+    return new ActionScore(IngeniousAction.create(piece, x1, y1, x2, y2), 0.0);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public State getStateRepresentation() {
     return stateRepresentation;
-  }
-
-  @Override
-  public double getScoreForLastAction() {
-    return 0;
   }
 }

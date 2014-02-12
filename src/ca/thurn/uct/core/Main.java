@@ -9,7 +9,6 @@ import java.util.Random;
 
 /**
  * A helper class for running games & sets of games between multiple Agents.
- * @param <A> Action type to use.
  */
 public class Main {
   private final List<Agent> agents;
@@ -111,7 +110,8 @@ public class Main {
       }
       Agent agent = agentMap.get(canonicalState.getCurrentPlayer());
       long action = agent.pickAction(canonicalState.getCurrentPlayer(),
-          agent.getStateRepresentation().initialize(canonicalState));
+          agent.getStateRepresentation().initialize(canonicalState),
+          0L).getAction();
       if (isInteractive) {
         System.out.println(agent + " picked action " + action);
       }

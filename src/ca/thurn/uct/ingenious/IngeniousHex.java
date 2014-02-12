@@ -3,7 +3,8 @@ package ca.thurn.uct.ingenious;
 import java.util.Random;
 
 /**
- * A specific colored hex on the board of Ingenious.
+ * A specific colored hex on the board of Ingenious (or a special value called
+ * OFF_BOARD).
  */
 public class IngeniousHex {
   public static final int ORANGE = 1;
@@ -14,7 +15,7 @@ public class IngeniousHex {
   public static final int BLUE = 6;
   public static final int OFF_BOARD = 7;
   
-  private static final boolean USE_COLOR = false;
+  private static final boolean USE_COLOR = true;
   
   private static final String ANSI_RESET = "\u001B[0m";
   private static final String ANSI_RED = "\u001B[31m";
@@ -27,14 +28,24 @@ public class IngeniousHex {
   private static final int[] values = {ORANGE, YELLOW, PURPLE, RED, GREEN, BLUE};
   private static final Random random = new Random();
   
+  /**
+   * @return A random hex color.
+   */
   public static int randomHex() {
     return values[random.nextInt(values.length)];
   }
   
+  /**
+   * @return An array consisting of all possible colors (but not OFF_BOARD).
+   */
   public static int[] allColors() {
     return values;
   }
   
+  /**
+   * @param hex An ingenious hex.
+   * @return A string representation of the hex.
+   */
   public static String toString(int hex) {
     if (USE_COLOR) {
       switch(hex) {

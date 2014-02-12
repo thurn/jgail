@@ -4,10 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A class designed to associate positions in the game tree with values.
- *
- * @param <A> The action type used in this game tree.
- * @param <V> The value type to associate with a position in the tree.
+ * A class to track the number of visits to and rewards associated with given
+ * game tree nodes.
  */
 public class ActionTree {
   
@@ -17,9 +15,6 @@ public class ActionTree {
   
   /**
    * Constructs a new ActionTree root node.
-   *
-   * @param defaultValue The initial value to associate with all newly created
-   *     tree nodes.
    */
   public ActionTree() {
     this.children = new HashMap<Long, ActionTree>();
@@ -30,8 +25,6 @@ public class ActionTree {
    * not already exist.
    * 
    * @param action Action to retrieve the corresponding child node for.
-   * @param defaultValue If the desired node doesn't exist yet, a new
-   *     ActionTree will be created and initialized with this value.
    * @return The child ActionTree associated with this value.
    */
   public ActionTree child(long action) {
@@ -43,18 +36,32 @@ public class ActionTree {
     return result;
   }
   
+  /**
+   * Increases numVisits by 1.
+   */
   public void incrementNumVisits() {
     numVisits++;
   }
   
+  /**
+   * Adds the provided reward to the stored totalReward.
+   * 
+   * @param reward Reward to add.
+   */
   public void addReward(double reward) {
     totalReward += reward;
   }
   
+  /**
+   * @return Total number of visits recorded to this game tree node.
+   */
   public int getNumVisits() {
     return numVisits;
   }
   
+  /**
+   * @return Total reward associated with this game tree node.
+   */
   public double getTotalReward() {
     return totalReward;
   }

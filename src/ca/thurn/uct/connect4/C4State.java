@@ -1,9 +1,9 @@
 package ca.thurn.uct.connect4;
 
-import gnu.trove.list.TLongList;
-import gnu.trove.list.array.TLongArrayList;
-
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 import ca.thurn.uct.core.Player;
 import ca.thurn.uct.core.State;
@@ -15,20 +15,23 @@ public class C4State implements State {
   
   private static final int BOARD_HEIGHT = 6;
   private static final int BOARD_WIDTH = 7;  
-  private static final TLongList p1Actions;
-  private static final TLongList p2Actions;  
+  private static final List<Long> p1Actions;
+  private static final List<Long> p2Actions;  
   static {
-    p1Actions = new TLongArrayList();
+    p1Actions = new ArrayList<Long>();
     for (int i = 0; i < BOARD_WIDTH; ++i) {
       p1Actions.add(C4Action.create(Player.PLAYER_ONE, i));            
     }
 
-    p2Actions = new TLongArrayList();
+    p2Actions = new ArrayList<Long>();
     for (int i = 0; i < BOARD_WIDTH; ++i) {
       p2Actions.add(C4Action.create(Player.PLAYER_TWO, i));   
     }
   }
   
+  /**
+   * Direction on the game board.
+   */
   private static enum Direction {
     N, NE, E, SE, S, SW, W, NW
   }
@@ -36,9 +39,10 @@ public class C4State implements State {
   // Indexed as board[column][row] with the origin being in the bottom left,
   // null represents an empty space.
   private int[][] board;
-  private TLongList actions;
+  private List<Long> actions;
   private int currentPlayer;
   private int winner;
+  private Random random = new Random();
   
   /**
    * Null-initializes this state. The state will not be usable until one of
@@ -47,15 +51,7 @@ public class C4State implements State {
   public C4State() {
   }
 
-  /**
-   * Private field-initializing constructor. 
-   * 
-   * @param board
-   * @param actions
-   * @param currentPlayer
-   * @param winner
-   */
-  C4State(int[][] board, TLongList actions, int currentPlayer, int winner) {
+  private C4State(int[][] board, List<Long> actions, int currentPlayer, int winner) {
     this.board = board;
     this.actions = actions;
     this.currentPlayer = currentPlayer;
@@ -66,15 +62,23 @@ public class C4State implements State {
    * {@inheritDoc}
    */
   @Override
-  public TLongList getActions() {
+  public Iterable<Long> getActions() {
     return actions;
+  }
+  
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public long getRandomAction() {
+    return actions.get(random.nextInt(actions.size()));
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void perform(long action) {
+  public long perform(long action) {
     int freeSpace = 0;
     while (board[C4Action.getColumnNumber(action)][freeSpace] != 0) {
       freeSpace++;
@@ -83,13 +87,14 @@ public class C4State implements State {
     winner = computeWinner(currentPlayer, C4Action.getColumnNumber(action), freeSpace);
     currentPlayer = playerAfter(currentPlayer);
     actions = actionsForCurrentPlayer();
+    return 0;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void undo(long action) {
+  public void undo(long action, long undoToken) {
     int freeCell = BOARD_HEIGHT - 1;
     while (board[C4Action.getColumnNumber(action)][freeCell] == 0) {
       freeCell--;
@@ -117,7 +122,7 @@ public class C4State implements State {
    */
   @Override
   public State copy() {
-    return new C4State(copyBoard(), new TLongArrayList(actions), currentPlayer, winner);
+    return new C4State(copyBoard(), new ArrayList<Long>(actions), currentPlayer, winner);
   }
 
   /**
@@ -196,9 +201,9 @@ public class C4State implements State {
    * @return A list of actions the current player could legally take from 
    *     the current state.
    */
-  private TLongList actionsForCurrentPlayer() {
-    TLongList actions = currentPlayer == Player.PLAYER_TWO ? p2Actions : p1Actions;
-    TLongList result = new TLongArrayList();
+  private List<Long> actionsForCurrentPlayer() {
+    List<Long> actions = currentPlayer == Player.PLAYER_TWO ? p2Actions : p1Actions;
+    List<Long> result = new ArrayList<Long>();
     for (int i = 0; i < actions.size(); ++i) {
       long action = actions.get(i);
       if (board[C4Action.getColumnNumber(action)][BOARD_HEIGHT - 1] == 0) {

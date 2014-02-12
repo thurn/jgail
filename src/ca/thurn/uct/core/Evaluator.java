@@ -3,8 +3,6 @@ package ca.thurn.uct.core;
 
 /**
  * An evaluation function.
- * 
- * @param <A> Action type for this game.
  */
 public interface Evaluator {
   /**

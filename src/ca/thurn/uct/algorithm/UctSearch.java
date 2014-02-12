@@ -1,13 +1,13 @@
 package ca.thurn.uct.algorithm;
 
-import gnu.trove.list.TLongList;
-
 import java.util.Random;
 
+import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.ActionTree;
 import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Evaluator;
 import ca.thurn.uct.core.State;
+import ca.thurn.uct.core.WinLossEvaluator;
 
 /**
  * An agent which selects actions based on the UCT algorithm described in the
@@ -19,12 +19,10 @@ public class UctSearch implements Agent {
     * This exploration bias value, 1/sqrt(2), was shown by Kocsis and
     * Szepesvari to work well if rewards are in the range [0,1]. 
    */
-  public static double UNIT_EXPLORATION_BIAS = 0.70710678;
+  public static final double UNIT_EXPLORATION_BIAS = 0.70710678;
   
   /**
    * Builder for UctSearch agents.
-   *
-   * @param <A> Action type to use.
    */
   public static class Builder {
     private final State stateRepresentation;
@@ -35,16 +33,11 @@ public class UctSearch implements Agent {
 
     private double discountRate = 1.0;
     
-    private int maxDepth = 50;
+    private int maxDepth = 500;
     
-    private int numInitialVisits = 0;
+    private int numInitialVisits = 1;
     
-    private Evaluator evaluator = new Evaluator() {
-      @Override
-      public double evaluate(int player, State state) {
-        return state.getWinner() == player ? 1.0 : -1.0;
-      }
-    };
+    private Evaluator evaluator = new WinLossEvaluator();
     
     /**
      * Constructor for UctSearch Builders.
@@ -100,7 +93,7 @@ public class UctSearch implements Agent {
 
     /**
      * @param maxDepth The maximum depth the search to in the simulation.
-     *     Default value: 50.
+     *     Default value: 500.
      * @return this.
      */
     public Builder setMaxDepth(int maxDepth) {
@@ -111,7 +104,7 @@ public class UctSearch implements Agent {
     /**
      * @param numInitialVisits For the first numInitialVisits to a given game
      *     tree position, play random games instead of expanding the tree. This
-     *     saves memory. Default value: 0.
+     *     saves memory. Default value: 1.
      * @return this.
      */
     public Builder setNumInitialVisits(int numInitialVisits) {
@@ -121,8 +114,7 @@ public class UctSearch implements Agent {
 
     /**
      * @param evaluator Function to use to evaluate the heuristic value of a
-     *     terminal search node. Default value returns -1 for losses, 1 for
-     *     wins, and 0 for all other states.
+     *     terminal search node. Default value: {@link WinLossEvaluator}.
      * @return this.
      */
     public Builder setEvaluator(Evaluator evaluator) {
@@ -146,7 +138,6 @@ public class UctSearch implements Agent {
   private final int maxDepth;
   private final int numInitialVisits;
   private final Evaluator evaluator;  
-  private double lastActionReward;
   private final Random random = new Random();
   
   private UctSearch(State stateRepresentation, int numSimulations, double explorationBias,
@@ -164,29 +155,22 @@ public class UctSearch implements Agent {
    * {@inheritDoc} 
    */
   @Override
-  public long pickAction(int player, State root) {
+  public ActionScore pickAction(int player, State root, long timeBudget) {
     ActionTree actionTree = new ActionTree();
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(actionTree, player, root.copy(), 0);
     }
     double bestPayoff = Double.NEGATIVE_INFINITY;
     long bestAction = -1;
-    TLongList actions = root.getActions();
-    for (int i = 0; i < actions.size(); ++i) {
-      ActionTree child = actionTree.child(actions.get(i));
+    for (long action : root.getActions()) {
+      ActionTree child = actionTree.child(action);
       double estimatedPayoff = averageReward(child);
       if (estimatedPayoff > bestPayoff) {
         bestPayoff = estimatedPayoff;
-        bestAction = actions.get(i);
+        bestAction = action;
       }
     }
-    lastActionReward = bestPayoff;
-    return bestAction;
-  }
-  
-  @Override
-  public double getScoreForLastAction() {
-    return lastActionReward;
+    return new ActionScore(bestAction, bestPayoff);
   }
 
   /**
@@ -214,8 +198,7 @@ public class UctSearch implements Agent {
       double reward = -evaluator.evaluate(player, state);
       updateTree(actionTree, reward);
       return reward;
-    }
-    if (actionTree.getNumVisits() < numInitialVisits) {
+    } else if (actionTree.getNumVisits() < numInitialVisits) {
       double reward = -playRandomGame(player, state, depth + 1);
       updateTree(actionTree, reward);
       return reward;
@@ -229,21 +212,23 @@ public class UctSearch implements Agent {
     }
   }
   
+  /**
+   * Play a random game and return the evaluated outcome for the provided
+   * player.
+   * 
+   * @param player Player to evaluate the end result for.
+   * @param state Starting game state.
+   * @param depth Maximum depth to simulate before quitting.
+   * @return The score returned by the evaluator for the terminal state in the
+   *     random game.
+   */
   private double playRandomGame(int player, State state, int depth) {
     if (depth > maxDepth || state.isTerminal()) {
       return evaluator.evaluate(player, state);
     }    
-    long action = randomAction(state);
+    long action = state.getRandomAction();
     state.perform(action);
     return playRandomGame(player, state, depth + 1);   
-  }
-
-  /**
-   * @param state The current game state.
-   * @return A random action possible from this state.
-   */
-  private long randomAction(State state) {
-    return state.getActions().get(random.nextInt(state.getActions().size()));
   }
   
   /**
@@ -272,9 +257,8 @@ public class UctSearch implements Agent {
     // uctValue.
     double maximum = Double.NEGATIVE_INFINITY;
     long result = -1;
-    TLongList actions = state.getActions();
-    for (int i = 0 ; i < actions.size(); ++i) {
-      ActionTree child = actionTree.child(actions.get(i));
+    for (long action : state.getActions()) {
+      ActionTree child = actionTree.child(action);
       double uctValue = averageReward(child) +
           explorationBias(actionTree.getNumVisits(), child.getNumVisits());
       // We multiply the result by 1000000 and then add a random double from
@@ -282,7 +266,7 @@ public class UctSearch implements Agent {
       uctValue = (uctValue * 1000000) + random.nextDouble();
       if (uctValue > maximum) {
         maximum = uctValue;
-        result = actions.get(i);
+        result = action;
       }
     }
     return result;
