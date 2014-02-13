@@ -162,7 +162,9 @@ public class UctSearch implements Agent {
     }
     double bestPayoff = Double.NEGATIVE_INFINITY;
     long bestAction = -1;
-    for (long action : root.getActions()) {
+    State.ActionIterator actionIterator = root.getActionIterator();
+    while (actionIterator.hasNextAction()) {
+      long action = actionIterator.nextAction();
       ActionTree child = actionTree.child(action);
       double estimatedPayoff = averageReward(child);
       if (estimatedPayoff > bestPayoff) {
@@ -257,7 +259,9 @@ public class UctSearch implements Agent {
     // uctValue.
     double maximum = Double.NEGATIVE_INFINITY;
     long result = -1;
-    for (long action : state.getActions()) {
+    State.ActionIterator actionIterator = state.getActionIterator();
+    while (actionIterator.hasNextAction()) {
+      long action = actionIterator.nextAction();
       ActionTree child = actionTree.child(action);
       double uctValue = averageReward(child) +
           explorationBias(actionTree.getNumVisits(), child.getNumVisits());

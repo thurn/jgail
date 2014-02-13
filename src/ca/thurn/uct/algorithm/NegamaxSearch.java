@@ -113,7 +113,9 @@ public class NegamaxSearch implements Agent {
     }
     double bestValue = Double.NEGATIVE_INFINITY;
     long bestAction = -1;
-    for (long action : state.getActions()) {
+    State.ActionIterator actionIterator = state.getActionIterator();
+    while (actionIterator.hasNextAction()) {
+      long action = actionIterator.nextAction();
       long undoToken = state.perform(action);
       double value = -1 *
           search(state.getCurrentPlayer(), state, maxDepth - 1, -beta, -alpha).getScore();
@@ -134,11 +136,13 @@ public class NegamaxSearch implements Agent {
 
   @Override
   public String toString() {
-    StringBuilder builder2 = new StringBuilder();
-    builder2.append("NegamaxSearch [searchDepth=");
-    builder2.append(searchDepth);
-    builder2.append("]");
-    return builder2.toString();
+    StringBuilder builder = new StringBuilder();
+    builder.append("NegamaxSearch [searchDepth=");
+    builder.append(searchDepth);
+    builder.append(", evaluator=");
+    builder.append(evaluator);
+    builder.append("]");
+    return builder.toString();
   }
 
 }

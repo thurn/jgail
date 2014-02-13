@@ -31,5 +31,9 @@ public class AgentEvaluator implements Evaluator {
       return agent.pickAction(player, state, timeBudget).getScore();
     }
   }
+  
+  public String toString() {
+    return "AgentEvaluator [agent=" + agent + "]";
+  }
 
 }

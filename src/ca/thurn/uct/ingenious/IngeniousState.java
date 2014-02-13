@@ -27,6 +27,11 @@ public class IngeniousState implements State {
     NE, E, SE, SW, W, NW
   }
   
+  /**
+   * Evaluator which evaluates Ingenious game states by comparing the player's
+   * lowest scoring color in the state, breaking ties by looking at the second
+   * lowest score, and so on.
+   */
   public static class LowestScoreEvaluator implements Evaluator {
     @Override
     public double evaluate(int player, State state) {
@@ -34,19 +39,32 @@ public class IngeniousState implements State {
       List<Integer> scores = 
           new ArrayList<Integer>(ingeniousState.scoresForPlayer(player).values());
       Collections.sort(scores);
-      return scores.get(0);
+      return (scores.get(0) * 1000000) + (scores.get(1) * 100000) + (scores.get(2) * 10000) +
+          (scores.get(3) * 1000) + (scores.get(4) * 100) + (scores.get(5) * 10);
+    }
+    
+    public String toString() {
+      return "LowestScoreEvaluator";
     }
   }
   
-  public static class AverageScoreEvaluator implements Evaluator {
+  /**
+   * Evaluator which evaluates Ingenious game states by comparing the player's
+   * cumulative scores.
+   */
+  public static class CumulativeScoreEvaluator implements Evaluator {
     @Override
     public double evaluate(int player, State state) {
       IngeniousState ingeniousState = (IngeniousState)state;
-      double result = 0.0;
+      int result = 0;
       for (int score : ingeniousState.scoresForPlayer(player).values()) {
         result += score;
       }
-      return result / 6.0;
+      return result;
+    }
+    
+    public String toString() {
+      return "CumulativeScoreEvaluator";
     }
   }
   
@@ -82,8 +100,8 @@ public class IngeniousState implements State {
    * {@inheritDoc}
    */
   @Override
-  public Iterable<Long> getActions() {
-    return actions;
+  public State.ActionIterator getActionIterator() {
+    return new State.ActionIteratorFromIterable(actions);
   }
   
   /**
@@ -241,6 +259,25 @@ public class IngeniousState implements State {
     }
     
     return 0;
+  }
+  
+  @Override
+  public String actionToString(long action) {
+    int piece = IngeniousAction.getPiece(action);
+    StringBuilder result = new StringBuilder();
+    result.append("[");
+    result.append(IngeniousHex.toString(IngeniousPiece.getHex1(piece)));
+    result.append(IngeniousHex.toString(IngeniousPiece.getHex2(piece)));
+    result.append(" ");
+    result.append(IngeniousAction.getX1(action));
+    result.append(",");
+    result.append(IngeniousAction.getY1(action));
+    result.append(" ");
+    result.append(IngeniousAction.getX2(action));
+    result.append(",");
+    result.append(IngeniousAction.getY2(action));
+    result.append("]");
+    return result.toString();
   }
   
   /**

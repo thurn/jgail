@@ -11,7 +11,7 @@ import ca.thurn.uct.core.WinLossEvaluator;
 
 /**
  * An agent which picks actions by running repeated random simulations from
- * the current state and returning the one that had the best outcome.
+ * the current state and returning the one that had the best average outcome.
  */
 public class MonteCarloSearch implements Agent {
   
@@ -23,7 +23,9 @@ public class MonteCarloSearch implements Agent {
     
     private int numSimulations = 100000;
 
-    private int maxDepth = 50;
+    private int maxDepth = 500;
+    
+    private double discountRate = 1.0; 
     
     private Builder(State stateRepresentation) {
       this.stateRepresentation = stateRepresentation;
@@ -35,7 +37,8 @@ public class MonteCarloSearch implements Agent {
      * @return A new MonteCarloSearch instance.
      */
     public MonteCarloSearch build() {
-      return new MonteCarloSearch(stateRepresentation, numSimulations, maxDepth, evaluator);
+      return new MonteCarloSearch(stateRepresentation, numSimulations, discountRate, maxDepth,
+          evaluator);
     }
 
     /**
@@ -47,10 +50,23 @@ public class MonteCarloSearch implements Agent {
       this.numSimulations = numSimulations;
       return this;
     }
+    
+    /**
+     * @param discountRate The rate at which rewards should be discounted in
+     *     the future, used to compute the present value of future rewards.
+     *     This way, rewards further in the future are worth less. This
+     *     captures our uncertainty about the future, as well as helping avoid
+     *     infinite reward cycles, etc. Default value: 1.0 (no discounting).
+     * @return this.
+     */
+    public Builder setDiscountRate(double discountRate) {
+      this.discountRate = discountRate;
+      return this;
+    }
 
     /**
      * @param maxDepth The maximum depth the search to in the simulation.
-     *     Default value: 50.
+     *     Default value: 500.
      * @return this.
      */
     public Builder setMaxDepth(int maxDepth) {
@@ -78,7 +94,8 @@ public class MonteCarloSearch implements Agent {
   }
 
   private final State stateRepresentation;  
-  private final int numSimulations;  
+  private final int numSimulations;
+  private final double discountRate;
   private final int maxDepth;
   private final Evaluator evaluator;  
 
@@ -92,10 +109,11 @@ public class MonteCarloSearch implements Agent {
    * @param maxDepth
    * @param evaluator
    */
-  private MonteCarloSearch(State stateRepresentation, int numSimulations, int maxDepth,
-      Evaluator evaluator) {
+  private MonteCarloSearch(State stateRepresentation, int numSimulations, double discountRate,
+      int maxDepth, Evaluator evaluator) {
     this.stateRepresentation = stateRepresentation;
     this.numSimulations = numSimulations;
+    this.discountRate = discountRate;
     this.maxDepth = maxDepth;
     this.evaluator = evaluator;
   }
@@ -120,6 +138,7 @@ public class MonteCarloSearch implements Agent {
     double bestReward = Double.NEGATIVE_INFINITY;
     long bestAction = -1;
     for (Map.Entry<Long, Double> entry : actionRewards.entrySet()) {
+//      System.out.println(stateRepresentation.actionToString(entry.getKey()) + " " + entry.getValue());
       if (entry.getValue() > bestReward) {
         bestReward = entry.getValue();
         bestAction = entry.getKey();
@@ -130,13 +149,15 @@ public class MonteCarloSearch implements Agent {
   
   @Override
   public String toString() {
-    StringBuilder builder2 = new StringBuilder();
-    builder2.append("MonteCarloSearch [numSimulations=");
-    builder2.append(numSimulations);
-    builder2.append(", maxDepth=");
-    builder2.append(maxDepth);
-    builder2.append("]");
-    return builder2.toString();
+    StringBuilder builder = new StringBuilder();
+    builder.append("MonteCarloSearch [numSimulations=");
+    builder.append(numSimulations);
+    builder.append(", discountRate=");
+    builder.append(discountRate);
+    builder.append(", maxDepth=");
+    builder.append(maxDepth);
+    builder.append("]");
+    return builder.toString();
   }
 
   /**
@@ -154,10 +175,10 @@ public class MonteCarloSearch implements Agent {
     }
     long action = state.getRandomAction();
     state.perform(action);
-    double reward = runSimulation(player, state, depth + 1);
+    double reward = discountRate * runSimulation(player, state, depth + 1);
     if (depth == 0) {
       Double current = actionRewards.get(action);
-      actionRewards.put(action, current == null ? 0 : current + reward);
+      actionRewards.put(action, current == null ? reward : current + reward);
     }
     return reward;
   }

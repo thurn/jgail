@@ -113,7 +113,7 @@ public class Main {
           agent.getStateRepresentation().initialize(canonicalState),
           0L).getAction();
       if (isInteractive) {
-        System.out.println(agent + " picked action " + action);
+        System.out.println(agent + " picked action " + canonicalState.actionToString(action));
       }
       canonicalState.perform(action);
     }

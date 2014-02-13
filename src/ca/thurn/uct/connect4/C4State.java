@@ -62,8 +62,8 @@ public class C4State implements State {
    * {@inheritDoc}
    */
   @Override
-  public Iterable<Long> getActions() {
-    return actions;
+  public State.ActionIterator getActionIterator() {
+    return new State.ActionIteratorFromIterable(actions);
   }
   
   /**
@@ -178,6 +178,14 @@ public class C4State implements State {
   @Override
   public int playerBefore(int player) {
     return playerAfter(player);
+  }
+  
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String actionToString(long action) {
+    return "[" + C4Action.getColumnNumber(action) + "]";
   }
   
   @Override  
@@ -296,6 +304,6 @@ public class C4State implements State {
       result[i] = Arrays.copyOf(board[i], BOARD_HEIGHT);
     }
     return result;
-  } 
+  }
 
 }

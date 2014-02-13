@@ -1,5 +1,7 @@
 package ca.thurn.uct.core;
 
+import java.util.Iterator;
+
 
 
 /**
@@ -14,9 +16,65 @@ package ca.thurn.uct.core;
 public interface State {
   
   /**
-   * @return All of the actions which are currently possible from this state.
+   * An iterator over the actions available from a state in an undefined order.
    */
-  public Iterable<Long> getActions();
+  public static interface ActionIterator {
+    /**
+     * @return Any legal action from the underlying state which has not
+     *     been returned on a previous call.
+     */
+    public long nextAction();
+    
+    /**
+     * @return True if all legal actions from the underlying state have been
+     *     returned by calls to {@link ActionIterator#nextAction()}.
+     */
+    public boolean hasNextAction();
+  }
+  
+  /**
+   * Adapter class to convert an Iterable<Long> into an ActionIterator.
+   */
+  public static class ActionIteratorFromIterable implements ActionIterator {
+    
+    private final Iterator<Long> iterator;
+    
+    /**
+     * Create a new wrapper for the provider iterable.
+     *
+     * @param iterable The iterable to wrap.
+     */
+    public ActionIteratorFromIterable(Iterable<Long> iterable) {
+      this.iterator = iterable.iterator();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long nextAction() {
+      return iterator.next();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean hasNextAction() {
+      return iterator.hasNext();
+    }
+  }
+  
+  /**
+   * Gets an action iterator for this state.
+   * 
+   * @return An iterator over the set of all actions which are currently
+   *     possible from this state. This iterator should be "perform-tolerant",
+   *     meaning that a user can perform() and then undo() an arbitrary number
+   *     of actions between calls to {@link ActionIterator#nextAction()}
+   *     without breaking the iterator or causing it to lose its place.
+   */
+  public ActionIterator getActionIterator();
   
   /**
    * @return A random action which is legal from this state.
@@ -26,7 +84,7 @@ public interface State {
   /**
    * Performs the provided action by mutating the state. You should assume that
    * the provided action will be a legal one, it is the responsibility of
-   * {@link State#getActions()} to return only legal actions.
+   * {@link State#getActionIterator()} to return only legal actions.
    * 
    * @param action The action to perform.
    * @return An "undo token" which must be passed to
@@ -78,7 +136,7 @@ public interface State {
   
   /**
    * @return The Player who won the game in this state. If there is no
-   *     winner (the game is a draw, not yet over, etc), returns null.
+   *     winner (the game is a draw, not yet over, etc), returns 0.
    */
   public int getWinner();
 
@@ -100,4 +158,10 @@ public interface State {
    *     sequence.
    */
   public int playerBefore(int player);
+  
+  /**
+   * @param action One of this state's actions.
+   * @return A String representation of this action.
+   */
+  public String actionToString(long action);
 }

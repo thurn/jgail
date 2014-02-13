@@ -15,7 +15,8 @@ public interface Agent {
    *     {@link Agent#getStateRepresentation()}.
    * @param timeBudget The amount of time, in milliseconds, that the agent
    *     should take to return an answer. Agents should meet this deadline on
-   *     a best-effort basis.
+   *     a best-effort basis. A time budget of 0 indicates the agent has
+   *     unlimited time to make a choice.
    * @return An ActionScore pair consisting of the action this player should
    *     take in the current game state and an optional corresponding heuristic
    *     score for this action, where a higher number indicates a better action
