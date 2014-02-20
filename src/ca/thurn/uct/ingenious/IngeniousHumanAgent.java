@@ -27,7 +27,7 @@ public class IngeniousHumanAgent implements Agent {
    * {@inheritDoc}
    */
   @Override
-  public ActionScore pickAction(int player, State rootNode, long timeBudget) {
+  public ActionScore pickActionSynchronously(int player, State rootNode) {
     IngeniousState state = (IngeniousState)rootNode;
     int piece;
     int index, x1, y1, x2, y2;

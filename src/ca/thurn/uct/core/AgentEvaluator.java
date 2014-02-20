@@ -28,7 +28,7 @@ public class AgentEvaluator implements Evaluator {
     if (state.isTerminal()) {
       return state.getWinner() == player ? 1.0 : -1.0;
     } else {
-      return agent.pickAction(player, state, timeBudget).getScore();
+      return agent.pickActionSynchronously(player, state).getScore();
     }
   }
   

@@ -4,22 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ca.thurn.uct.algorithm.MonteCarloSearch;
-import ca.thurn.uct.algorithm.NegamaxSearch;
 import ca.thurn.uct.core.Agent;
-import ca.thurn.uct.core.Main;
-import ca.thurn.uct.core.WinLossEvaluator;
+import ca.thurn.uct.core.AsyncMain;
 
 public class TicTacToeMain {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException {
     List<Agent> agents = new ArrayList<Agent>();
-    agents.add(NegamaxSearch.builder(new TicTacToeState())
-        .setSearchDepth(10)
-        .setEvaluator(new WinLossEvaluator())
-        .build());
     agents.add(MonteCarloSearch.builder(new TicTacToeState())
-        .setDiscountRate(0.5)
-        .build());
-    Main main = new Main(agents, new TicTacToeState().setToStartingConditions());
-    main.runTournament(100);
+        .setDiscountRate(0.5).build());
+    agents.add(MonteCarloSearch.builder(new TicTacToeState())
+        .setDiscountRate(0.5).build());    
+    AsyncMain main = new AsyncMain(agents, new TicTacToeState().setToStartingConditions());
+    main.runTournament(100, 30);
   }
 }

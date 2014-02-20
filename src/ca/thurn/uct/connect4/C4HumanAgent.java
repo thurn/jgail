@@ -26,7 +26,7 @@ public class C4HumanAgent implements Agent {
    * {@inheritDoc}
    */
   @Override
-  public ActionScore pickAction(int player, State rootNode, long timeBudget) {
+  public ActionScore pickActionSynchronously(int player, State rootNode) {
     System.out.println("Select a column [0,6]");
     int column = in.nextInt();
     return new ActionScore(C4Action.create(player, column), 0.0);

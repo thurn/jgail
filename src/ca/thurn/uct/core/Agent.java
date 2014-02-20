@@ -9,20 +9,16 @@ public interface Agent {
    * Picks an action for the provided player to take from the provided root
    * node. 
    *
-   * @param player The player whose turn it is.
+   * @param player The player who this Agent is trying to optimize for.
    * @param rootNode The current state of the game, using the state
    *     representation this agent returned from
    *     {@link Agent#getStateRepresentation()}.
-   * @param timeBudget The amount of time, in milliseconds, that the agent
-   *     should take to return an answer. Agents should meet this deadline on
-   *     a best-effort basis. A time budget of 0 indicates the agent has
-   *     unlimited time to make a choice.
    * @return An ActionScore pair consisting of the action this player should
    *     take in the current game state and an optional corresponding heuristic
    *     score for this action, where a higher number indicates a better action
    *     for the player.
    */
-  public ActionScore pickAction(int player, State rootNode, long timeBudget);
+  public ActionScore pickActionSynchronously(int player, State rootNode);
   
   /**
    * @return A null-initialized state object of the class this agent wishes

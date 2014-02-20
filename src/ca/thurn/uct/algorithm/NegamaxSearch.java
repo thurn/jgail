@@ -82,7 +82,7 @@ public class NegamaxSearch implements Agent {
    * {@inheritDoc}
    */
   @Override
-  public ActionScore pickAction(int player, State rootNode, long timeBudget) {
+  public ActionScore pickActionSynchronously(int player, State rootNode) {
     return search(player, rootNode, searchDepth, Double.NEGATIVE_INFINITY,
         Double.POSITIVE_INFINITY);
   }

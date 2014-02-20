@@ -5,6 +5,7 @@ import java.util.Map;
 
 import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.Agent;
+import ca.thurn.uct.core.AsynchronousAgent;
 import ca.thurn.uct.core.Evaluator;
 import ca.thurn.uct.core.State;
 import ca.thurn.uct.core.WinLossEvaluator;
@@ -13,7 +14,7 @@ import ca.thurn.uct.core.WinLossEvaluator;
  * An agent which picks actions by running repeated random simulations from
  * the current state and returning the one that had the best average outcome.
  */
-public class MonteCarloSearch implements Agent {
+public class MonteCarloSearch implements Agent, AsynchronousAgent {
   
   /**
    * Builder for MonteCarloSearch.
@@ -97,7 +98,9 @@ public class MonteCarloSearch implements Agent {
   private final int numSimulations;
   private final double discountRate;
   private final int maxDepth;
-  private final Evaluator evaluator;  
+  private final Evaluator evaluator;
+  private volatile ActionScore asyncResult;
+  private Thread workerThread;
 
   private Map<Long, Double> actionRewards = new HashMap<Long, Double>(); 
   
@@ -130,7 +133,7 @@ public class MonteCarloSearch implements Agent {
    * {@inheritDoc}
    */
   @Override
-  public ActionScore pickAction(int player, State root, long timeBudget) {
+  public ActionScore pickActionSynchronously(int player, State root) {
     actionRewards = new HashMap<Long, Double>(); 
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(player, root.copy(), 0);
@@ -138,13 +141,51 @@ public class MonteCarloSearch implements Agent {
     double bestReward = Double.NEGATIVE_INFINITY;
     long bestAction = -1;
     for (Map.Entry<Long, Double> entry : actionRewards.entrySet()) {
-//      System.out.println(stateRepresentation.actionToString(entry.getKey()) + " " + entry.getValue());
       if (entry.getValue() > bestReward) {
         bestReward = entry.getValue();
         bestAction = entry.getKey();
       }
     }
     return new ActionScore(bestAction, bestReward);
+  }
+  
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public synchronized void beginAsynchronousSearch(final int player, final State root) {
+    workerThread = (new Thread() {
+      @Override
+      public void run() {
+        actionRewards = new HashMap<Long, Double>();
+        while (!isInterrupted()) {
+          for (int i = 0; i < 1000; ++i) {
+            runSimulation(player, root.copy(), 0);
+          }
+          double bestReward = Double.NEGATIVE_INFINITY;
+          long bestAction = -1;
+          for (Map.Entry<Long, Double> entry : actionRewards.entrySet()) {
+            if (entry.getValue() > bestReward) {
+              bestReward = entry.getValue();
+              bestAction = entry.getKey();
+            }
+          }
+          asyncResult = new ActionScore(bestAction, bestReward);          
+        }
+      }
+    });
+    workerThread.start();
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public synchronized ActionScore getAsynchronousSearchResult() {
+    workerThread.interrupt();
+    workerThread = null;
+    return asyncResult;
   }
   
   @Override

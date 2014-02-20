@@ -155,7 +155,7 @@ public class UctSearch implements Agent {
    * {@inheritDoc} 
    */
   @Override
-  public ActionScore pickAction(int player, State root, long timeBudget) {
+  public ActionScore pickActionSynchronously(int player, State root) {
     ActionTree actionTree = new ActionTree();
     for (int i = 0; i < numSimulations; ++i) {
       runSimulation(actionTree, player, root.copy(), 0);
