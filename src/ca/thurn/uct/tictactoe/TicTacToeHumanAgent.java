@@ -28,7 +28,7 @@ public class TicTacToeHumanAgent implements Agent {
    * {@inheritDoc}
    */
   @Override
-  public ActionScore pickActionSynchronously(int player, State rootNode) {
+  public ActionScore pickActionBlocking(int player, State rootNode) {
     System.out.println("Pick an action [0-8]");
     int shift = in.nextInt();
     int base = player == Player.PLAYER_ONE ? 0x100 : 0x100000;
@@ -43,4 +43,9 @@ public class TicTacToeHumanAgent implements Agent {
     return stateRepresentation;
   }
 
+  @Override
+  public String toString() {
+    return "Human";
+  }
+  
 }

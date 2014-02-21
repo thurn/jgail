@@ -103,6 +103,9 @@ public class TicTacToeState implements State {
    */
   @Override
   public State copy() {
+    if (actions == null) {
+      return new TicTacToeState();
+    }
     return new TicTacToeState(board, currentPlayer, new ArrayList<Long>(actions));
   }
 

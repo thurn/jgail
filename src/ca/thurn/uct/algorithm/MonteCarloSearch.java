@@ -101,8 +101,6 @@ public class MonteCarloSearch implements Agent, AsynchronousAgent {
   private final Evaluator evaluator;
   private volatile ActionScore asyncResult;
   private Thread workerThread;
-
-  private Map<Long, Double> actionRewards = new HashMap<Long, Double>(); 
   
   /**
    * Field-initializing constructor.
@@ -126,29 +124,17 @@ public class MonteCarloSearch implements Agent, AsynchronousAgent {
    */
   @Override
   public State getStateRepresentation() {
-    return stateRepresentation;
+    return stateRepresentation.copy();
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public ActionScore pickActionSynchronously(int player, State root) {
-    actionRewards = new HashMap<Long, Double>(); 
-    for (int i = 0; i < numSimulations; ++i) {
-      runSimulation(player, root.copy(), 0);
-    }
-    double bestReward = Double.NEGATIVE_INFINITY;
-    long bestAction = -1;
-    for (Map.Entry<Long, Double> entry : actionRewards.entrySet()) {
-      if (entry.getValue() > bestReward) {
-        bestReward = entry.getValue();
-        bestAction = entry.getKey();
-      }
-    }
-    return new ActionScore(bestAction, bestReward);
+  public ActionScore pickActionBlocking(int player, State root) {
+    Map<Long, Double> actionRewards = new HashMap<Long, Double>(); 
+    return runSimulations(player, root, actionRewards, numSimulations);
   }
-  
 
   /**
    * {@inheritDoc}
@@ -158,20 +144,9 @@ public class MonteCarloSearch implements Agent, AsynchronousAgent {
     workerThread = (new Thread() {
       @Override
       public void run() {
-        actionRewards = new HashMap<Long, Double>();
+        Map<Long, Double> actionRewards = new HashMap<Long, Double>();
         while (!isInterrupted()) {
-          for (int i = 0; i < 1000; ++i) {
-            runSimulation(player, root.copy(), 0);
-          }
-          double bestReward = Double.NEGATIVE_INFINITY;
-          long bestAction = -1;
-          for (Map.Entry<Long, Double> entry : actionRewards.entrySet()) {
-            if (entry.getValue() > bestReward) {
-              bestReward = entry.getValue();
-              bestAction = entry.getKey();
-            }
-          }
-          asyncResult = new ActionScore(bestAction, bestReward);          
+          asyncResult = runSimulations(player, root, actionRewards, 1000);         
         }
       }
     });
@@ -200,6 +175,31 @@ public class MonteCarloSearch implements Agent, AsynchronousAgent {
     builder.append("]");
     return builder.toString();
   }
+  
+  /**
+   * Run random simulations, updating actionRewards with the results.
+   *
+   * @param player Player to optimize for.
+   * @param root Starting state to simulate from.
+   * @param number Number of simulations to run.
+   * @return An ActionScore representing the best-scoring action to take from
+   *     this state and its score.
+   */
+  private ActionScore runSimulations(int player, State root, Map<Long, Double> actionRewards,
+      int number) {
+    for (int i = 0; i < number; ++i) {
+      runSimulation(player, root.copy(), actionRewards, 0);
+    }
+    double bestReward = Double.NEGATIVE_INFINITY;
+    long bestAction = -1;
+    for (Map.Entry<Long, Double> entry : actionRewards.entrySet()) {
+      if (entry.getValue() > bestReward) {
+        bestReward = entry.getValue();
+        bestAction = entry.getKey();
+      }
+    }
+    return new ActionScore(bestAction, bestReward);
+  }
 
   /**
    * Runs a simulation to determine the total reward associated with being at
@@ -210,13 +210,14 @@ public class MonteCarloSearch implements Agent, AsynchronousAgent {
    * @param depth The depth in the search.
    * @return The reward associated with being at this state.
    */
-  private double runSimulation(int player, State state, int depth) {
+  private double runSimulation(int player, State state, Map<Long, Double> actionRewards,
+      int depth) {
     if (depth > maxDepth || state.isTerminal()) {
       return evaluator.evaluate(player, state);
     }
     long action = state.getRandomAction();
     state.perform(action);
-    double reward = discountRate * runSimulation(player, state, depth + 1);
+    double reward = discountRate * runSimulation(player, state, actionRewards, depth + 1);
     if (depth == 0) {
       Double current = actionRewards.get(action);
       actionRewards.put(action, current == null ? reward : current + reward);

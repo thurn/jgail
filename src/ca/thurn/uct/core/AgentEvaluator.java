@@ -13,7 +13,7 @@ public class AgentEvaluator implements Evaluator {
    * 
    * @param agent Underlying agent to perform evaluations.
    * @param timeBudget Amount of time that should be allowed to perform the
-   *     evaluation.
+   *     evaluation. 0 indicates no time budget.
    */
   public AgentEvaluator(Agent agent, long timeBudget) {
     this.agent = agent;
@@ -28,7 +28,19 @@ public class AgentEvaluator implements Evaluator {
     if (state.isTerminal()) {
       return state.getWinner() == player ? 1.0 : -1.0;
     } else {
-      return agent.pickActionSynchronously(player, state).getScore();
+      State represented = agent.getStateRepresentation().initialize(state);
+      if (timeBudget != 0 && agent instanceof AsynchronousAgent) {
+        ((AsynchronousAgent)agent).beginAsynchronousSearch(player, represented);
+        try {
+          Thread.sleep(timeBudget);
+        } catch (InterruptedException e) {
+          // Ran out of time and have no useful information.
+          return 0.0;
+        }
+        return ((AsynchronousAgent)agent).getAsynchronousSearchResult().getScore();
+      } else {
+        return agent.pickActionBlocking(player, represented).getScore();
+      }
     }
   }
   

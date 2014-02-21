@@ -184,6 +184,9 @@ public class IngeniousState implements State {
    */
   @Override
   public State copy() {
+    if (actions == null && board == null) {
+      return new IngeniousState();
+    }
     return new IngeniousState(new ArrayList<Long>(actions), copyBoard(),
         currentPlayer, new ArrayList<Integer>(p1Hand), new ArrayList<Integer>(p2Hand),
         new HashMap<Integer, Integer>(p1Score), new HashMap<Integer, Integer>(p2Score));

@@ -1,15 +1,15 @@
 package ca.thurn.uct.algorithm;
 
 import ca.thurn.uct.core.ActionScore;
-import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.AgentEvaluator;
+import ca.thurn.uct.core.AsynchronousAgent;
 import ca.thurn.uct.core.Evaluator;
 import ca.thurn.uct.core.State;
 
 /**
  * An agent which selects an action via the Negamax search algorithm.
  */
-public class NegamaxSearch implements Agent {
+public class NegamaxSearch implements AsynchronousAgent {
   
   /**
    * Builder for NegamaxSearch.
@@ -27,8 +27,7 @@ public class NegamaxSearch implements Agent {
     public Builder(State stateRepresentation) {
       this.stateRepresentation = stateRepresentation;
       this.evaluator = new AgentEvaluator(
-          MonteCarloSearch.builder(stateRepresentation).setNumSimulations(200).build(),
-          0);
+          MonteCarloSearch.builder(stateRepresentation).setNumSimulations(500).setDiscountRate(0.9).build(), 0L);
     }
 
     /**
@@ -71,6 +70,8 @@ public class NegamaxSearch implements Agent {
   private final State stateRepresentation;
   private final int searchDepth;
   private final Evaluator evaluator;
+  private volatile ActionScore asyncResult;
+  private Thread workerThread;  
   
   private NegamaxSearch(State stateRepresentation, int searchDepth, Evaluator evaluator) {
     this.stateRepresentation = stateRepresentation;
@@ -82,9 +83,9 @@ public class NegamaxSearch implements Agent {
    * {@inheritDoc}
    */
   @Override
-  public ActionScore pickActionSynchronously(int player, State rootNode) {
+  public ActionScore pickActionBlocking(int player, State rootNode) {
     return search(player, rootNode, searchDepth, Double.NEGATIVE_INFINITY,
-        Double.POSITIVE_INFINITY);
+        Double.POSITIVE_INFINITY, null /* thread */);
   }
 
   /**
@@ -92,7 +93,29 @@ public class NegamaxSearch implements Agent {
    */
   @Override
   public State getStateRepresentation() {
-    return stateRepresentation;
+    return stateRepresentation.copy();
+  }
+
+  @Override
+  public void beginAsynchronousSearch(final int player, final State root) {
+    workerThread = (new Thread() {
+      @Override
+      public void run() {
+        int searchDepth = 1;        
+        while (!isInterrupted()) {
+          asyncResult = search(player, root.copy(), searchDepth++, Double.NEGATIVE_INFINITY,
+              Double.POSITIVE_INFINITY, this);
+        }
+      }
+    });
+    workerThread.start();        
+  }
+
+  @Override
+  public ActionScore getAsynchronousSearchResult() {
+    workerThread.interrupt();
+    workerThread = null;
+    return asyncResult;
   }
   
   /**
@@ -103,11 +126,14 @@ public class NegamaxSearch implements Agent {
    * @param maxDepth The maximum depth to search to in the game tree.
    * @param alpha The minimum known score that the maximizing player can get.
    * @param beta The maximum known score that the minimizing player can get.
+   * @param thread Optionally, the thread this search is running on, so the
+   *     algorithm can check for interrupts and terminate. Pass null to
+   *     disable this functionality.
    * @return An ActionScore pair consisting of the best action for the player
    *     to take and the heuristic score associated with this action.
    */
   private ActionScore search(int player, State state, int maxDepth, double alpha,
-      double beta) {
+      double beta, Thread thread) {
     if (state.isTerminal() || maxDepth == 0) {
       return new ActionScore(-1, evaluator.evaluate(player, state.copy()));
     }
@@ -118,7 +144,8 @@ public class NegamaxSearch implements Agent {
       long action = actionIterator.nextAction();
       long undoToken = state.perform(action);
       double value = -1 *
-          search(state.getCurrentPlayer(), state, maxDepth - 1, -beta, -alpha).getScore();
+          search(state.getCurrentPlayer(), state, maxDepth - 1, -beta, -alpha,
+              null /* thread */).getScore();
       state.undo(action, undoToken);
       if (value > bestValue) {
         bestValue = value;
@@ -128,6 +155,9 @@ public class NegamaxSearch implements Agent {
         alpha = value;
       }
       if (alpha >= beta) {        
+        break;
+      }
+      if (thread != null && thread.isInterrupted()) {
         break;
       }
     }

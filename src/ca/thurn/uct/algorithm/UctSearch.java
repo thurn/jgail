@@ -4,7 +4,7 @@ import java.util.Random;
 
 import ca.thurn.uct.core.ActionScore;
 import ca.thurn.uct.core.ActionTree;
-import ca.thurn.uct.core.Agent;
+import ca.thurn.uct.core.AsynchronousAgent;
 import ca.thurn.uct.core.Evaluator;
 import ca.thurn.uct.core.State;
 import ca.thurn.uct.core.WinLossEvaluator;
@@ -13,7 +13,7 @@ import ca.thurn.uct.core.WinLossEvaluator;
  * An agent which selects actions based on the UCT algorithm described in the
  * 2006 paper "Bandit based Monte-Carlo Planning" by Kocsis and Szepesvari.
  */
-public class UctSearch implements Agent {
+public class UctSearch implements AsynchronousAgent {
   
   /**
     * This exploration bias value, 1/sqrt(2), was shown by Kocsis and
@@ -139,6 +139,8 @@ public class UctSearch implements Agent {
   private final int numInitialVisits;
   private final Evaluator evaluator;  
   private final Random random = new Random();
+  private volatile ActionScore asyncResult;
+  private Thread workerThread;
   
   private UctSearch(State stateRepresentation, int numSimulations, double explorationBias,
       double discountRate, int maxDepth, int numInitialVisits, Evaluator evaluator) {
@@ -155,9 +157,59 @@ public class UctSearch implements Agent {
    * {@inheritDoc} 
    */
   @Override
-  public ActionScore pickActionSynchronously(int player, State root) {
+  public ActionScore pickActionBlocking(int player, State root) {
     ActionTree actionTree = new ActionTree();
-    for (int i = 0; i < numSimulations; ++i) {
+    return runSimulations(player, root, actionTree, numSimulations);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public State getStateRepresentation() {
+    return stateRepresentation.copy();
+  }
+  
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void beginAsynchronousSearch(final int player, final State root) {
+    workerThread = (new Thread() {
+      @Override
+      public void run() {
+        ActionTree actionTree = new ActionTree();
+        while (!isInterrupted()) {
+          asyncResult = runSimulations(player, root, actionTree, 1000);         
+        }
+      }
+    });
+    workerThread.start();    
+  }
+  
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public ActionScore getAsynchronousSearchResult() {
+    workerThread.interrupt();
+    workerThread = null;
+    return asyncResult;
+  }
+  
+  /**
+   * Runs a number of simulations to determine the best action to take from the
+   * provided root state.
+   *
+   * @param player Player to optimize for.
+   * @param root Root state.
+   * @param actionTree ActionTree tracking game tree rewards.
+   * @param number Number of simulations to run.
+   * @return An ActionScore indicating the best action to take from this state,
+   *     along with its score.
+   */
+  private ActionScore runSimulations(int player, State root, ActionTree actionTree, int number) {
+    for (int i = 0; i < number; ++i) {
       runSimulation(actionTree, player, root.copy(), 0);
     }
     double bestPayoff = Double.NEGATIVE_INFINITY;
@@ -174,14 +226,7 @@ public class UctSearch implements Agent {
     }
     return new ActionScore(bestAction, bestPayoff);
   }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public State getStateRepresentation() {
-    return stateRepresentation;
-  }
+  
   
   /**
    * Runs a simulation to determine the total payoff associated with being at

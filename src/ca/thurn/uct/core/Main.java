@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 
 /**
@@ -14,7 +15,7 @@ public class Main {
   private final List<Agent> agents;
   private final State initialState;
   private final Random random = new Random();
-  private State canonicalState;  
+  private State canonicalState;
 
   /**
    * Constructs a new Main instance.
@@ -36,10 +37,14 @@ public class Main {
    * report the results.
    *
    * @param tournamentSize The number of matches to run.
+   * @param perMoveTimeBudget Amount of time to allow for each agent to pick a
+   *     move, if they are AsynchronousAgents.
+   * @throws InterruptedException 
    */
-  public void runTournament(int tournamentSize) {
+  public void runTournament(int tournamentSize, long perMoveTimeBudget)
+      throws InterruptedException {
     long startTime = System.currentTimeMillis();
-    int[] wins = new int[agents.size()];
+    Map<Agent, Integer> wins = new HashMap<Agent, Integer>();
     int draws = 0;
 
     for (int i = 0; i < tournamentSize; ++i) {
@@ -49,14 +54,24 @@ public class Main {
       while (red == black) {
         red = random.nextInt(agents.size());
       }
-      agentMap.put(Player.PLAYER_ONE, agents.get(black));
-      agentMap.put(Player.PLAYER_TWO, agents.get(red));
-      int winner = playGame(agentMap, false /* isInteractive */);
+      Agent agent1 = agents.get(black);
+      Agent agent2 = agents.get(red);
+      agentMap.put(Player.PLAYER_ONE, agent1);
+      agentMap.put(Player.PLAYER_TWO, agent2);
+      int winner = playGame(agentMap, false /* isInteractive */, perMoveTimeBudget);
       System.out.print(".");
       if (winner == Player.PLAYER_ONE) {
-        wins[black]++;
+        if (wins.containsKey(agent1)) {
+          wins.put(agent1, wins.get(agent1) + 1);
+        } else {
+          wins.put(agent1, 1);
+        }
       } else if (winner == Player.PLAYER_TWO) {
-        wins[red]++;
+        if (wins.containsKey(agent2)) {
+          wins.put(agent2, wins.get(agent2) + 1);
+        } else {
+          wins.put(agent2, 1);
+        }
       } else if (winner == 0) {
         draws++;
       }
@@ -79,12 +94,16 @@ public class Main {
   /**
    * Run a single match between the first two provided agents, printing out the
    * current game state between each move.
+   * 
+   * @param perMoveTimeBudget Amount of time to allow for each agent to pick a
+   *     move, if they are AsynchronousAgents.
+   * @throws InterruptedException 
    */
-  public void runMatch() {
-    Map<Integer, Agent> agentMap = new HashMap<Integer, Agent>();
+  public void runMatch(long perMoveTimeBudget) throws InterruptedException {
+    final Map<Integer, Agent> agentMap = new HashMap<Integer, Agent>();
     agentMap.put(Player.PLAYER_ONE, agents.get(0));
     agentMap.put(Player.PLAYER_TWO, agents.get(1));
-    int winner = playGame(agentMap, true /* isInteractive */);
+    int winner = playGame(agentMap, true /* isInteractive */, perMoveTimeBudget);
     if (winner != 0) {
       System.out.println(agentMap.get(winner) + " wins!");
     } else {
@@ -101,16 +120,31 @@ public class Main {
    *     information.
    * @return The winner of the game as defined by the canonical state's
    *     {@link State#getWinner()} method.
+   * @throws InterruptedException 
    */
-  private int playGame(Map<Integer, Agent> agentMap, boolean isInteractive) {
+  private int playGame(Map<Integer, Agent> agentMap, boolean isInteractive,
+      long perMoveTimeBudget) throws InterruptedException {
     canonicalState = initialState.copy();
     while (!canonicalState.isTerminal()) {
       if (isInteractive) {
         System.out.println(canonicalState);
       }
       Agent agent = agentMap.get(canonicalState.getCurrentPlayer());
-      long action = agent.pickActionSynchronously(canonicalState.getCurrentPlayer(),
-          agent.getStateRepresentation().initialize(canonicalState)).getAction();
+      long action;
+      if (agent instanceof AsynchronousAgent) {
+        AsynchronousAgent async = (AsynchronousAgent)agent;
+        async.beginAsynchronousSearch(canonicalState.getCurrentPlayer(),
+            async.getStateRepresentation().initialize(canonicalState));
+        Thread.sleep(perMoveTimeBudget);
+        ActionScore pair = async.getAsynchronousSearchResult();
+        if (pair == null) {
+          throw new RuntimeException("Agent " + async + " needed more time.");
+        }
+        action = pair.getAction();
+      } else {
+        action = agent.pickActionBlocking(canonicalState.getCurrentPlayer(),
+            agent.getStateRepresentation().initialize(canonicalState)).getAction();
+      }
       if (isInteractive) {
         System.out.println(agent + " picked action " + canonicalState.actionToString(action));
       }
@@ -128,10 +162,10 @@ public class Main {
    * @param wins Array counting wins for each player number.
    * @param draws Number of draws in the tournament.
    */
-  private void printTournamentResults(int[] wins, int draws) {
+  private void printTournamentResults(Map<Agent, Integer> wins, int draws) {
     System.out.println("===== Tournament Results ======");
-    for (int i = 0; i < wins.length; ++i) {
-      System.out.println("Player #" + i + ": " + wins[i] + " wins");      
+    for (Entry<Agent, Integer> entry : wins.entrySet()) {
+      System.out.println(entry.getKey() + " : " + entry.getValue() + " wins");
     }
     System.out.println(draws + " draws");
   }

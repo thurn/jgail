@@ -7,7 +7,7 @@ package ca.thurn.uct.core;
 public interface Agent {
   /**
    * Picks an action for the provided player to take from the provided root
-   * node. 
+   * node. Blocks the calling thread until a result is available.
    *
    * @param player The player who this Agent is trying to optimize for.
    * @param rootNode The current state of the game, using the state
@@ -18,10 +18,10 @@ public interface Agent {
    *     score for this action, where a higher number indicates a better action
    *     for the player.
    */
-  public ActionScore pickActionSynchronously(int player, State rootNode);
+  public ActionScore pickActionBlocking(int player, State rootNode);
   
   /**
-   * @return A null-initialized state object of the class this agent wishes
+   * @return A copy of the null-initialized state object this agent wishes
    *     to use for its internal state representation.
    */
   public State getStateRepresentation();

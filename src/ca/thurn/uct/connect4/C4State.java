@@ -122,6 +122,9 @@ public class C4State implements State {
    */
   @Override
   public State copy() {
+    if (actions == null && board == null) {
+      return new C4State();
+    }
     return new C4State(copyBoard(), new ArrayList<Long>(actions), currentPlayer, winner);
   }
 

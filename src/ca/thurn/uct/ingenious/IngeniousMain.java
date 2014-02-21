@@ -9,7 +9,7 @@ import ca.thurn.uct.core.Agent;
 import ca.thurn.uct.core.Main;
 
 public class IngeniousMain {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws InterruptedException {
     List<Agent> agents = new ArrayList<Agent>();
     agents.add(UctSearch.builder(new IngeniousState())
         .setNumSimulations(10000)
@@ -17,9 +17,9 @@ public class IngeniousMain {
         .build());
     agents.add(NegamaxSearch.builder(new IngeniousState())
         .setEvaluator(new IngeniousState.LowestScoreEvaluator())
-        .setSearchDepth(3)
+        .setSearchDepth(2)
         .build());    
     Main main = new Main(agents, new IngeniousState().setToStartingConditions());
-    main.runMatch();
+    main.runTournament(5, 500L);
   }
 }

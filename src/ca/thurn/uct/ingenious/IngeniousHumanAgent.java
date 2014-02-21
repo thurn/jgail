@@ -27,7 +27,7 @@ public class IngeniousHumanAgent implements Agent {
    * {@inheritDoc}
    */
   @Override
-  public ActionScore pickActionSynchronously(int player, State rootNode) {
+  public ActionScore pickActionBlocking(int player, State rootNode) {
     IngeniousState state = (IngeniousState)rootNode;
     int piece;
     int index, x1, y1, x2, y2;
@@ -62,5 +62,10 @@ public class IngeniousHumanAgent implements Agent {
   @Override
   public State getStateRepresentation() {
     return stateRepresentation;
+  }
+  
+  @Override
+  public String toString() {
+    return "Human";
   }
 }
