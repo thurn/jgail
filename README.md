@@ -27,14 +27,14 @@ These two parts of AI implementaition are largely left up to you. Players are re
 The core of JGAIL is the [State](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.html) interface. This is what defines any possible game state. States have a number of related responsibilities:
 
 ### Supplying Possible Actions
-States are responsible for supplying clients with the *possible actions* that can be taken. For example, a State which represented pieces on a chess board would be responsible for providing clients with the legal moves for the current player. This is primarily implemented through the [getActionIterator()](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.html#getActionIterator(\)) method, which returns an [ActionIterator](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.ActionIterator.html) over the possible actions from the current state.
+States are responsible for supplying clients with the *possible actions* that can be taken. For example, a State which represented pieces on a chess board would be responsible for providing clients with the legal moves for the current player. This is primarily implemented through the [getActionIterator()](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.html#getActionIterator(%29) method, which returns an [ActionIterator](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.ActionIterator.html) over the possible actions from the current state.
 
 The State can return actions in any order. Some states choose to pre-compute all possible actions in advance, other states will dynamically produce them during iteration... both choices are valid depending on your specific problem space. States also need to be able to produce random actions for use by stochastic agents. These agents will perform better if the random actions are uniformly distributed.
 
 ### Performing Actions
 States need to be able to *perform* actions. For example, a State which represented a chess baord would need to be able to take the action "e2-e4" and update itself so that the pawn in the e2 position is now in the e4 position. In the original version of JGAIL, States were immutable and returned a *new* State on perform, but this provided unacceptable performance, so the current version is based on mutating the State.
 
-The key method here is [perform()](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.html#perform(long\)), which takes an Action (java long) and mutates the state. The supplied action will be one of the ones previously returned as a possible action by the State.
+The key method here is [perform()](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.html#perform(long%29), which takes an Action (java long) and mutates the state. The supplied action will be one of the ones previously returned as a possible action by the State.
 
 States also need to support undoing actions. Several search algorithms are most efficiently implemented by performing a series of actions, evaluating the resulting State, and then undoing the actions, thus saving on memory allocations. In order to help implement undo(), the State can return an *undo token* from perform which clients need to supply when they try and undo that action. This can, for example, encapsulate any random choices the State made when performing the action (such as drawing new cards from a deck).
 
@@ -42,9 +42,9 @@ States also need to support undoing actions. Several search algorithms are most 
 States also need to be able to answer some general questions about themselves. Most importantly, they need to have a *current player*, whose turn it currently is. They also need to be able to figure out if the game is currently over or not (representing a terminal game state). Finally, they need to implement the plumbing for turn management... "whose turn is it after the current player's turn?", etc.
 
 ### Initialization
-As mentioned in the Agent section, different State representations may be employed during the same game. To help with this, States can be copied around, and a new State can be "initialized from" another state (via the [initializeFrom()](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.html#initializeFrom(ca.thurn.jgail.core.Copyable\)) method). Typically, when you first create a State class, its fields will simply be initialized with nulls. Then, the State will be given another State to initialize itself to. In this way, the game can maintain a **canonical game state** and then tell each Agent's state representaiton to initialize itself to match that canonical state.
+As mentioned in the Agent section, different State representations may be employed during the same game. To help with this, States can be copied around, and a new State can be "initialized from" another state (via the [initializeFrom()](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.html#initializeFrom(ca.thurn.jgail.core.Copyable%29) method). Typically, when you first create a State class, its fields will simply be initialized with nulls. Then, the State will be given another State to initialize itself to. In this way, the game can maintain a **canonical game state** and then tell each Agent's state representaiton to initialize itself to match that canonical state.
 
-States have a separate method called [setToStartingConditions()](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.html#setToStartingConditions(\)) which puts the state into the initial state of the game. In the case of a chess board, for example, this would be the state will all of the pieces in their starting positions.
+States have a separate method called [setToStartingConditions()](https://thurn.github.io/jgail/doc/ca/thurn/jgail/core/State.html#setToStartingConditions(%29) which puts the state into the initial state of the game. In the case of a chess board, for example, this would be the state will all of the pieces in their starting positions.
 
 ## Algorithms
 There are three different AI algorithms currently included with JGAIL:
@@ -58,7 +58,7 @@ Three different examples are provided to show how to use the tools included in J
 
 * **Tic Tac Toe**. An extremely simple game with a very small state-space. It's useful for testing algorithms because any algorithm should be able to play a perfect game, and it's easy to manually follow the flow of the algorithm to debug problems.
 * **Connect 4**. A medium-sized game with a smaller branching factor. All of the algorithms here are competitive at it and can outperform a human player, but it's still too large of a game for them to play a perfect game.
-* **[Ingenious](https://en.wikipedia.org/wiki/Ingenious_(board_game\))**. A tile placement game designed by Reiner Knizia, shown in the screenshot above. Has a very large branching factor (there are on the order of 500 possible opening moves), and intermediate states are very difficult to evaluate heuristically, making it similar to games like Go. Algorithms like Negamax are effectively useless at playing this game.
+* **[Ingenious](https://en.wikipedia.org/wiki/Ingenious_(board_game%29)**. A tile placement game designed by Reiner Knizia, shown in the screenshot above. Has a very large branching factor (there are on the order of 500 possible opening moves), and intermediate states are very difficult to evaluate heuristically, making it similar to games like Go. Algorithms like Negamax are effectively useless at playing this game.
 
 
 ## License
