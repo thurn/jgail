@@ -20,6 +20,6 @@ public class IngeniousMain {
         .setSearchDepth(2)
         .build());    
     Main main = new Main(agents, new IngeniousState().setToStartingConditions());
-    main.runTournament(5, 500L);
+    main.runMatch(1000L);
   }
 }
